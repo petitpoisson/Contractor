@@ -1,0 +1,22 @@
+{
+  "$schema": "https://developer.joomla.org/schemas/json-schema/web_assets.json",
+  "name": "com_contractor",
+  "version": "1.0.0",
+  "description": "Assets for Contractor Component",
+  "license": "GPL-2.0-or-later",
+  "assets": [
+    {
+      "name": "com_contractor.main",
+      "type": "style",
+      "uri": "com_contractor/contractor.css"
+    },
+    {
+      "name": "com_contractor.main",
+      "type": "script",
+      "uri": "com_contractor/contractor.js",
+      "dependencies": [
+        "core"
+      ]
+    }
+  ]
+}

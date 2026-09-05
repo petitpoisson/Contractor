@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="details" label="COM_CONTRACTOR_CONTRACT_DETAILS">
+        <field name="id" type="hidden" />
+        
+        <field name="name" type="text" label="COM_CONTRACTOR_CONTRACT_NAME" required="true" class="inputbox form-control" size="40" />
+
+        <field name="client_id" type="sql" label="COM_CONTRACTOR_CONTRACT_CLIENT" query="SELECT id, client_name FROM #__ctr_client ORDER BY client_name ASC" key_field="id" value_field="client_name" header="COM_CONTRACTOR_CONTRACT_CLHEAD" required="true" class="form-select" />
+
+        <field name="rem" type="textarea" label="COM_CONTRACTOR_CONTRACT_REM" filter="safehtml" rows="5" hiddenLabel="true" />
+        
+        <field name="xrem" type="textarea" label="COM_CONTRACTOR_CONTRACT_XREM" filter="safehtml" rows="5" hiddenLabel="true" />
+    </fieldset>
+
+    <fieldset name="publishing" label="COM_CONTRACTOR_CONTRACT_PUBP">
+        <field name="published" type="list" label="JSTATUS" default="1" class="form-select">
+            <option value="1">JPUBLISHED</option>
+            <option value="0">JUNPUBLISHED</option>
+        </field>
+
+        <field name="tag_id" type="sql" label="COM_CONTRACTOR_CONTRACT_TAG" query="SELECT id, value FROM #__ctr_tags ORDER BY value ASC" key_field="id" value_field="value" header="COM_CONTRACTOR_CONTRACT_TAGHEAD" class="form-select" />
+
+        <field name="date_start" type="calendar" label="COM_CONTRACTOR_CONTRACT_STARTDATE" format="%Y-%m-%d" filter="user_utc" required="true" />
+        <field name="valid_thru" type="calendar" label="COM_CONTRACTOR_CONTRACT_VALIDTHRU" format="%Y-%m-%d" filter="user_utc" required="true" />
+        <field name="lastmsg" type="calendar" label="COM_CONTRACTOR_CONTRACT_LASTMSG" format="%Y-%m-%d" disabled="disabled" />
+    </fieldset>
+</form>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fields name="filter">
+        <field name="search" type="text" inputmode="search" label="JSEARCH_FILTER" hint="COM_CONTRACTOR_LOG_SEARCH" />
+        
+        <field name="from_date" type="calendar" label="COM_CONTRACTOR_LOG_FDATE" hint="COM_CONTRACTOR_LOG_FDATE" format="%Y-%m-%d" />
+        <field name="until_date" type="calendar" label="COM_CONTRACTOR_LOG_UDATE" hint="COM_CONTRACTOR_LOG_UDATE" format="%Y-%m-%d" />
+        
+        <field name="level" type="list" label="COM_CONTRACTOR_LOG_LEVEL" class="js-select-submit-on-change">
+            <option value="">COM_CONTRACTOR_LOG_AL</option>
+            <option value="0">Info</option>
+            <option value="1">Warning</option>
+            <option value="2">Error</option>
+        </field>
+
+        <field name="client_id" type="sql" query="SELECT id, client_name FROM #__ctr_client ORDER BY client_name ASC" key_field="id" value_field="client_name" header="- All Clients -" label="COM_CONTRACTOR_LOG_CLIENT" class="js-select-submit-on-change" />
+    </fields>
+    
+    <fields name="list">
+        <field name="fullordering" type="list" label="JGLOBAL_SORT_BY" default="a.timedate DESC" class="js-select-submit-on-change">
+            <option value="">JGLOBAL_SORT_BY</option>
+            <option value="a.timedate DESC">COM_CONTRACTOR_SORT_DATEA</option>
+            <option value="a.timedate ASC">COM_CONTRACTOR_SORT_DATEO</option>
+            <option value="a.level DESC">COM_CONTRACTOR_SORT_LEVDESC</option>
+            <option value="a.level ASC">COM_CONTRACTOR_SORT_LEVASC</option>
+            <option value="c.client_name ASC">COM_CONTRACTOR_SORT_CLASC</option>
+            <option value="c.client_name DESC">COM_CONTRACTOR_SORT_CLDESC</option>
+        </field>
+        
+        <field name="limit" type="limitbox" label="JGLOBAL_LIST_LIMIT" default="25" class="js-select-submit-on-change" />
+    </fields>
+</form>

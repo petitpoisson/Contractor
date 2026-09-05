@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<metadata>
+    <layout title="COM_CONTRACTOR_CLIENT_VIEW_DEFAULT_TITLE">
+        <message>COM_CONTRACTOR_CLIENT_VIEW_DEFAULT_DESC</message>
+    </layout>
+    
+    <fields name="params">
+        <fieldset name="custom" label="COM_CONTRACTOR_FIELDSET_CLIENT_OPTIONS">
+            
+            <field 
+                name="custom_page_title" 
+                type="text" 
+                label="COM_CONTRACTOR_CUSTOM_TITLE_LABEL" 
+                description="COM_CONTRACTOR_CUSTOM_TITLE_DESC" 
+                default="" 
+            />
+
+            <field 
+                name="guest_redirect_url" 
+                type="menuitem" 
+                label="COM_CONTRACTOR_REDIRPAGE" 
+                description="COM_CONTRACTOR_REDIRPAGEDESC" 
+                default=""
+            >
+                <option value="">COM_CONTRACTOR_DEFAULT_REDIRPAGE</option>
+            </field>
+
+            <field 
+                name="ctmsg" 
+                label="COM_CONTRACTOR_CTMS" 
+                type="radio" 
+                default="1" 
+                description="COM_CONTRACTOR_CTMSGDESC" 
+                layout="joomla.form.field.radio.switcher">
+                <option value="0">JNO</option>
+                <option value="1">JYES</option>
+            </field>
+
+            <field 
+                name="ctmsgtext" 
+                type="editor" 
+                rows="5" 
+                label="COM_CONTRACTOR_CTMSGTXT" 
+                filter="safehtml" 
+                buttons="false" 
+                default="COM_CONTRACTOR_CTMSGTXTDEF" 
+                translate_default="true"/>
+
+        </fieldset>
+    </fields>
+</metadata>

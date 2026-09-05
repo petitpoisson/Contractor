@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<updates>
+    <update>
+        <name>Contractor</name>
+        <description>contractor component by Petitpoisson (Xavier Spirlet)</description>
+        <element>com_contractor</element>
+        <type>component</type>
+        <version>1.0.1</version>
+        <infourl title="Contractor component">http://www.petitpoisson.be</infourl>
+        <downloads>
+            <downloadurl type="full" format="zip">https://f001.backblazeb2.com/file/extupdates/com_contractor-v1.0.1.zip</downloadurl>
+        </downloads>
+        <tags>
+            <tag>stable</tag>
+        </tags>
+        <sha256>86c0cf572d8bf3a30e2ed17910e150e87b736040cd7350d1e12605a1ae20b2af</sha256>
+        <maintainer>Xavier Spirlet</maintainer>
+        <maintainerurl>https://www.petitpoisson.be/</maintainerurl>
+        <section>Updates</section>
+        <targetplatform name="joomla" version="[5-6].*"/>
+        <client>1</client>
+    </update>
+</updates>

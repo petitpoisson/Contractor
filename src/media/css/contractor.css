@@ -1,0 +1,133 @@
+/**
+ * Contractor Component (com_contractor) for Joomla!
+ *
+ * @author      Xavier Spirlet (Petitpoisson)
+ * @copyright   Copyright (C) 2026 Xavier Spirlet. All rights reserved.
+ * @license     GNU General Public License version 3 or later; see LICENSE.txt
+ * @link        https://www.petitpoisson.be
+ */
+
+ /* =========================================
+   BOOTSTRAP OVERRIDES
+   ========================================= */
+
+/* 1. Kill native Bootstrap pseudo-element to prevent template conflicts */
+.com-contractor-client-view .accordion-button::after {
+    display: none !important;
+}
+
+/* 2. Style our explicit FontAwesome chevron */
+.com-contractor-client-view .custom-bs-chevron {
+    transition: transform 0.2s ease-in-out;
+    font-size: 1rem;
+    filter: grayscale(100%) brightness(20%);
+    flex-shrink: 0;
+}
+
+/* 3. Rotate the chevron downwards when the Bootstrap accordion is open */
+.com-contractor-client-view .accordion-button:not(.collapsed) .custom-bs-chevron {
+    transform: rotate(90deg);
+}
+
+/* CONTRACTS */
+.com-contractor-client-view .custom-accordion-contract-bg {
+    background-color: var(--ctr-contract-bg); 
+    color: var(--ctr-contract-text) !important;
+}
+
+.com-contractor-client-view .accordion-button.custom-accordion-contract-bg:not(.collapsed) {
+    background-color: var(--ctr-contract-bg-open);
+    color: var(--ctr-contract-text-open) !important;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
+}
+
+/* INVOICES */
+.com-contractor-client-view .custom-accordion-invoice-bg {
+    background-color: var(--ctr-invoice-bg); 
+    color: var(--ctr-invoice-text) !important;
+}
+
+.com-contractor-client-view .accordion-button.custom-accordion-invoice-bg:not(.collapsed) {
+    background-color: var(--ctr-invoice-bg-open);
+    color: var(--ctr-invoice-text-open) !important;
+    box-shadow: inset 0 -1px 0 rgba(0,0,0,.125);
+}
+
+/* Remove blue glow on click for all buttons */
+.com-contractor-client-view .accordion-button:focus {
+    box-shadow: none;
+    border-color: #212529;
+}
+
+div.bsc-rem p {
+    margin-bottom: 0;
+}
+
+/* =========================================
+   UIKIT OVERRIDES
+   ========================================= */
+
+.com-contractor-client-view .uk-border-rounded-0 { 
+    border-radius: 0 !important; 
+}
+
+/* Custom paddings to reduce empty space */
+.com-contractor-client-view .custom-uikit-padding {
+    padding: 10px 15px !important;
+}
+.com-contractor-client-view .custom-uikit-padding-lines {
+    padding: 6px 15px !important;
+}
+
+/* CONTRACTS */
+.com-contractor-client-view .custom-uikit-contract-bg {
+    background-color: var(--ctr-contract-bg); 
+    color: var(--ctr-contract-text) !important; 
+    transition: background-color 0.2s; 
+    border: 1px solid #333;
+    text-decoration: none !important; /* Force remove underline */
+}
+
+.uk-open > .custom-uikit-contract-bg {
+    background-color: var(--ctr-contract-bg-open);
+    color: var(--ctr-contract-text-open) !important;
+}
+
+/* INVOICES */
+.com-contractor-client-view .custom-uikit-invoice-bg {
+    background-color: var(--ctr-invoice-bg); 
+    color: var(--ctr-invoice-text) !important; 
+    transition: background-color 0.2s; 
+    border: 1px solid #333;
+    text-decoration: none !important; /* Force remove underline */
+}
+
+.uk-open > .custom-uikit-invoice-bg {
+    background-color: var(--ctr-invoice-bg-open);
+    color: var(--ctr-invoice-text-open) !important;
+}
+
+div.uirem p {
+    margin-bottom: 0;
+}
+
+/* =========================================
+   UIKIT CHEVRON OVERRIDES
+   ========================================= */
+
+/* 1. Kill UIkit's native pseudo-element to prevent ghost spacing */
+.com-contractor-client-view .uk-accordion-title::before {
+    display: none !important;
+}
+
+/* 2. Style our explicit FontAwesome chevron */
+.com-contractor-client-view .custom-uikit-chevron {
+    transition: transform 0.2s ease-in-out;
+    font-size: 1rem;
+    /* Inherits text color dynamically (black or white) from the parent link */
+}
+
+/* 3. Rotate the chevron downwards when the UIkit accordion item gets the .uk-open class */
+.uk-open > .uk-accordion-title .custom-uikit-chevron {
+    transform: rotate(90deg);
+}

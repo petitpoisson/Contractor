@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="component" version="5.0" method="upgrade">
+    <name>COM_CONTRACTOR</name>
+    <author>Xavier Spirlet</author>
+    <creationDate>June 2026</creationDate>
+    <copyright>(C) 2026 Xavier Spirlet - Petitpoisson</copyright>
+    <license>GNU General Public License version 3 or later</license>
+    <authorEmail>xavier@petitpoisson.be</authorEmail>
+    <authorUrl>https://www.petitpoisson.be</authorUrl>
+    <version>1.0.1</version>
+    <description>COM_CONTRACTOR_XML_DESCRIPTION</description>
+
+    <namespace path="src">XavierSpirlet\Component\Contractor</namespace>
+
+    <scriptfile>script.php</scriptfile>
+    
+    <install>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/install.mysql.utf8.sql</file>
+        </sql>
+    </install>
+    <uninstall>
+        <sql>
+            <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
+        </sql>
+    </uninstall>
+
+    <media destination="com_contractor" folder="media">
+        <filename>joomla.asset.json</filename>
+        <folder>css</folder>
+        <folder>js</folder>
+        <folder>images</folder>
+    </media>
+
+    <files folder="site">
+        <folder>src</folder>
+        <folder>tmpl</folder>
+        <folder>language</folder>
+    </files>
+
+    <updateservers>
+        <server type="extension" name="Contractor updates">https://f001.backblazeb2.com/file/extupdates/contractor_update.xml</server>
+    </updateservers>
+
+
+    <administration>
+        <menu img="class:contractor">COM_CONTRACTOR</menu>
+        <submenu>
+            <menu link="option=com_contractor&amp;view=dashboard">COM_CONTRACTOR_DASHBOARD</menu>
+            <menu link="option=com_contractor&amp;view=contracts">COM_CONTRACTOR_CONTRACTS</menu>
+            <menu link="option=com_contractor&amp;view=clients">COM_CONTRACTOR_CLIENTS</menu>
+            <menu link="option=com_contractor&amp;view=tags">COM_CONTRACTOR_TAGS</menu>
+            <menu link="option=com_contractor&amp;view=config">COM_CONTRACTOR_CONFIG</menu>
+            <menu link="option=com_contractor&amp;view=logs">COM_CONTRACTOR_LOGS</menu>
+        </submenu>
+        <files folder="administrator">
+            <folder>forms</folder>
+            <folder>language</folder>
+            <folder>services</folder>
+            <folder>sql</folder>
+            <folder>src</folder>
+            <folder>tmpl</folder>
+        </files>
+    </administration>
+
+    <plugins>
+        <plugin folder="plugins" plugin="contractorwarning" group="task" />
+        <plugin folder="plugins" plugin="contractorshortcut" group="quickicon" />
+    </plugins>
+
+    <modules folder="modules">
+        <module module="mod_contractor_client" client="site" />
+    </modules>
+    
+</extension>

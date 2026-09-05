@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<access component="com_contractor">
+    <section name="component">
+        <action name="core.admin" title="JACTION_ADMIN" description="JACTION_ADMIN_COMPONENT_DESC" />
+        <action name="core.manage" title="JACTION_MANAGE" description="JACTION_MANAGE_COMPONENT_DESC" />
+        <action name="core.options" title="JACTION_OPTIONS" description="JACTION_OPTIONS_COMPONENT_DESC" />
+        
+        <action name="core.manage.clients" title="Access Clients View" description="Allows users to view and edit clients" />
+        <action name="core.manage.contracts" title="Access Contracts View" description="Allows users to view and edit contracts" />
+        <action name="core.manage.tags" title="Access Tags View" description="Allows users to view and edit tags" />
+        <action name="core.manage.logs" title="Access Logs View" description="Allows users to view system logs" />
+        <action name="core.manage.config" title="Access Configuration View" description="Allows users to view and edit component configuration" />
+    </section>
+</access>

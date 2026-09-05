@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="module" client="site" method="upgrade">
+    <name>COM_CONTRACTOR_MODULE_CLIENT_NAME</name>
+    <author>Xavier Spirlet (Petitpoisson)</author>
+    <creationDate>2026</creationDate>
+    <copyright>Copyright (C) 2026 Xavier Spirlet. All rights reserved.</copyright>
+    <license>GNU General Public License version 3 or later; see LICENSE.txt</license>
+    <authorEmail>contact@petitpoisson.be</authorEmail>
+    <authorUrl>https://www.petitpoisson.be</authorUrl>
+    <version>1.0.1</version>
+    <description>COM_CONTRACTOR_MODULE_CLIENT_DESC</description>
+
+    <namespace path="src">XavierSpirlet\Module\ContractorClient</namespace>
+
+    <files>
+        <filename module="mod_contractor_client">mod_contractor_client.php</filename>
+        <folder>src</folder>
+        <folder>tmpl</folder>
+        <folder>language</folder>
+    </files>
+
+    <config>
+        <fields name="params">
+            <fieldset name="basic" label="COM_CONTRACTOR_FIELDSET_MODULE_OPTIONS">
+                
+                <field 
+                    name="guest_redirect_url" 
+                    type="menuitem" 
+                    label="COM_CONTRACTOR_REDIRPAGE" 
+                    description="COM_CONTRACTOR_REDIRPAGEDESC" 
+                    default="">
+                    <option value="">COM_CONTRACTOR_DEFAULT_REDIRPAGE</option>
+                </field>
+
+                <field 
+                    name="show_invoices" 
+                    type="radio" 
+                    label="COM_CONTRACTOR_SHOW_INVOICES" 
+                    default="1" 
+                    layout="joomla.form.field.radio.switcher">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+                <field 
+                    name="show_contracts" 
+                    type="radio" 
+                    label="COM_CONTRACTOR_SHOW_CONTRACTS" 
+                    default="1" 
+                    layout="joomla.form.field.radio.switcher">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+                <field 
+                    name="ctmsg" 
+                    label="COM_CONTRACTOR_CTMS" 
+                    type="radio" 
+                    default="1" 
+                    description="COM_CONTRACTOR_CTMSGDESC" 
+                    layout="joomla.form.field.radio.switcher">
+                    <option value="0">JNO</option>
+                    <option value="1">JYES</option>
+                </field>
+
+                <field 
+                    name="ctmsgtext" 
+                    type="editor" 
+                    rows="5" 
+                    label="COM_CONTRACTOR_CTMSGTXT" 
+                    filter="safehtml" 
+                    buttons="false" 
+                    default="COM_CONTRACTOR_CTMSGTXTDEF" 
+                    translate_default="true"
+                />
+
+            </fieldset>
+        </fields>
+    </config>
+</extension>

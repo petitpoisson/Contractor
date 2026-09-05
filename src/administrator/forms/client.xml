@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<form>
+    <fieldset name="details">
+        <field name="id" type="hidden" />
+        <field name="published" type="radio" layout="joomla.form.field.radio.switcher" label="JSTATUS" default="1">
+            <option value="0">JUNPUBLISHED</option>
+            <option value="1">JPUBLISHED</option>
+        </field>
+        <field name="tag_id" type="sql" query="SELECT id, value FROM #__ctr_tags ORDER BY value ASC" key_field="id" value_field="value" header="COM_CONTRACTOR_CLIENT_NONE" label="Tag" />
+        <field name="client_name" type="text" label="COM_CONTRACTOR_CLIENT_PNAME" required="true" />
+        <field name="company_name" type="text" label="COM_CONTRACTOR_CLIENT_CY" />
+        <field name="email" type="email" label="COM_CONTRACTOR_CLIENT_MAIL" required="true" />
+        <field name="phone" type="text" label="COM_CONTRACTOR_CLIENT_PHONE" />
+        <field name="joomla_user_id" type="user" label="COM_CONTRACTOR_CLIENT_JU" />
+    </fieldset>
+    <fieldset name="communication">
+        <field name="mailtext" type="textarea" rows="5" label="COM_CONTRACTOR_CLIENT_MAILTEMPL" hiddenLabel="true" filter="safehtml" buttons="false" default="COM_CONTRACTOR_CLIENT_DEFAULTCOM" translate_default="true"/>
+    </fieldset>
+</form>

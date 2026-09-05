@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension type="plugin" group="task" method="upgrade">
+    <name>PLG_TASK_CONTRACTORWARNING</name>
+    <author>Xavier Spirlet</author>
+    <creationDate>2026</creationDate>
+    <copyright>Copyright (C) 2026 petitpoisson. All rights reserved.</copyright>
+    <license>GNU General Public License version 2 or later</license>
+    <version>1.0.1</version>
+    <description>PLG_TASK_CONTRACTORWARNING_XML_DESCRIPTION</description>
+    
+    <namespace path="src">XavierSpirlet\Plugin\Task\ContractorWarning</namespace>
+    
+    <files>
+        <folder plugin="contractorwarning">services</folder>
+        <folder>src</folder>
+    </files>
+    
+    <languages folder="language">
+        <language tag="en-GB">en-GB/en-GB.plg_task_contractorwarning.ini</language>
+        <language tag="en-GB">en-GB/en-GB.plg_task_contractorwarning.sys.ini</language>
+    </languages>
+</extension>
