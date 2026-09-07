@@ -1,6 +1,6 @@
 # Contractor
-[![Version](https://img.shields.io/github/v/release/petitpoisson/Contractor?label=Version)](https://github.com/petitpoisson/Contractor/releases)
-![Joomla](https://img.shields.io/badge/Joomla!-4.1%20%7C%205.x%20%7C%206.x-5091CD?logo=joomla)
+[![Version](https://img.shields.io/github/v/release/petitpoisson/Contractor?label=Version&refresh=1)](https://github.com/petitpoisson/Contractor/releases?refresh=1)
+![Joomla](https://img.shields.io/badge/Joomla!-5.x%20%7C%206.x-5091CD?logo=joomla)
 ![PHP](https://img.shields.io/badge/PHP-%E2%89%A5%208.1-777BB4?logo=php)
 [![License](https://img.shields.io/github/license/petitpoisson/Contractor?refresh=1)](https://github.com/petitpoisson/Contractor?refresh=1/blob/main/LICENSE)
 
