@@ -9,9 +9,9 @@
  * @link        https://www.petitpoisson.be
  */
 
-\defined('_JEXEC') or die;
-
 namespace XavierSpirlet\Plugin\Task\ContractorWarning\Extension;
+
+\defined('_JEXEC') or die;
 
 use Joomla\CMS\Factory;
 use Joomla\CMS\Plugin\CMSPlugin;
@@ -212,7 +212,6 @@ final class ContractorWarning extends CMSPlugin implements SubscriberInterface
         }
 
         if ($sentCount > 0) {
-            // Remplacement de 'null' par 0 pour éviter une erreur TypeError si writeLog attend strictement un int.
             ContractorHelper::writeLog(NULL, 0, "Task Scheduler routine completed. Total warning emails sent: {$sentCount}");
         }
 
