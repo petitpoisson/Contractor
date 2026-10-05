@@ -70,8 +70,8 @@ class ContractmsgModel extends BaseDatabaseModel
                 $priceEuros = number_format($line->price / 100, 2, '.', '');
                 
                 $linesHtml .= "    <tr>\n";
-                $linesHtml .= "      <td style=\"padding: 8px; border-bottom: 1px solid #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;\">" . htmlspecialchars($line->description) . "</td>\n";
-                $linesHtml .= "      <td style=\"padding: 8px; border-bottom: 1px solid #eee; text-align: right;\">" . $priceEuros . " " . $currency . "</td>\n";
+                $linesHtml .= "      <td style=\"padding: 8px; border-bottom: 1px solid #eee; text-wrap: wrap;vertical-align: top;\">" . htmlspecialchars($line->description) . "</td>\n";
+                $linesHtml .= "      <td style=\"padding: 8px; border-bottom: 1px solid #eee; text-align: right;vertical-align: top;\">" . $priceEuros . " " . $currency . "</td>\n";
                 $linesHtml .= "    </tr>\n";
             }
         }
