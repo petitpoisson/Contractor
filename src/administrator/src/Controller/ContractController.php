@@ -24,13 +24,25 @@ use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
 class ContractController extends FormController
 {
     /**
-     * Override save to log creation/updates
+     * Override save to log creation/updates + deal with save2copy
      */
     public function save($key = null, $urlVar = null)
     {
+        $task = $this->getTask();
         $data = $this->app->input->get('jform', [], 'array');
-        $id = (int) ($data['id'] ?? 0);
-        $isNew = ($id === 0);
+        
+        // Handle save2copy modifications
+        if ($task === 'save2copy') {
+            $data['published'] = 0; 
+            $this->app->input->post->set('jform', $data);
+            
+            // Force isNew to true for the logs, because save2copy creates a new record
+            $isNew = true;
+        } else {
+            $id = (int) ($data['id'] ?? 0);
+            $isNew = ($id === 0);
+        }
+
         $clientId = (int) ($data['client_id'] ?? 0);
         
         $result = parent::save($key, $urlVar);

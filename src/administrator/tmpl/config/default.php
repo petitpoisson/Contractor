@@ -18,7 +18,7 @@ use Joomla\CMS\Session\Session;
 
 // Inject custom CSS to restrict TinyMCE height specifically for this view
 $wa = $this->document->getWebAssetManager();
-$wa->addInlineStyle('.tox-tinymce { height: 240px !important; min-height: 200px; }');
+$wa->addInlineStyle('.tox-tinymce { height: 350px !important; min-height: 200px; }');
 
 // Load Joomla's form validation behaviors
 HTMLHelper::_('behavior.formvalidator');

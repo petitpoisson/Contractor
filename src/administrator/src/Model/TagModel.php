@@ -51,11 +51,17 @@ class TagModel extends AdminModel
     }
     public function delete(&$pks)
     {
-        parent::delete($pks);        
-        $pki=implode(",", $pks); 
-        $userId = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
-        ContractorHelper::writeLog(null, 1, "Joomla user ({$userId}) deleted tag(s) with id(s) {$pki}");
-        return true; 
+        // Only log if the deletion was actually successful
+        if (parent::delete($pks)) {
+            $pki = implode(",", $pks); 
+            $userId = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+            
+            ContractorHelper::writeLog(null, 1, "Joomla user ({$userId}) deleted tag(s) with id(s) {$pki}");
+            
+            return true;
+        }
+        
+        return false;
     }
     public function getTable($type = 'Tag', $prefix = 'Administrator', $config = [])
     {

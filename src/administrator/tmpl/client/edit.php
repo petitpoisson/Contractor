@@ -285,6 +285,10 @@ if (!empty($this->item->contracts)) {
     .ql-toolbar.ql-snow { border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem; border-color: #dee2e6; background-color: #f8f9fa; }
     .ql-container.ql-snow { border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; border-color: #dee2e6; font-family: inherit; font-size: inherit; }
     textarea.source-mode-active { display: block !important; width: 100%; height: 250px; font-family: Consolas, monospace; font-size: 14px; border: 1px solid #dee2e6; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; padding: 10px; resize: vertical; }
+    .inv-editable:hover { outline: 1px dashed #ccc; background: #f8f9fa; }
+    .cursor-pointer { cursor: pointer; }
+    .inv-inline-edit { transition: all 0.2s; }
+    .inv-inline-edit:hover, .inv-inline-edit:focus { background-color: #fff !important; border: 1px solid #ccc !important; outline: none; box-shadow: 0 0 5px rgba(0,0,0,0.1); }
 </style>
 
 <script>
@@ -300,6 +304,7 @@ if (!empty($this->item->contracts)) {
     const txtTestInvalid  = "<?php echo Text::_('COM_CONTRACTOR_INVOICE_TEST_INVALID_TYPE', true); ?>";
     const txtTestHttpErr  = "<?php echo Text::_('COM_CONTRACTOR_INVOICE_TEST_HTTP_ERR', true); ?>";
     const txtTestCorsErr  = "<?php echo Text::_('COM_CONTRACTOR_INVOICE_TEST_CORS_ERR', true); ?>";
+    const dirtywarn1      = "<?php echo Text::_('COM_CONTRACTOR_DIRTYWARN1', true); ?>";
 
     const clientId = <?php echo $clientId; ?>;
     const rootUrl  = "<?php echo Uri::root(); ?>";
@@ -375,8 +380,12 @@ if (!empty($this->item->contracts)) {
 
         tr.innerHTML = `
             <td>${inv.id}</td>
-            <td>${inv.invoicedate}</td>
-            <td class="fw-bold">${escapeHtml(inv.reference)}</td>
+            <td>
+                <input type="date" class="inv-inline-edit form-control form-control-sm border-0 bg-transparent px-1" data-id="${inv.id}" data-field="invoicedate" value="${inv.invoicedate}" title="<?php echo Text::_('JACTION_EDIT'); ?>">
+            </td>
+            <td class="fw-bold">
+                <input type="text" class="inv-inline-edit form-control form-control-sm border-0 bg-transparent px-1 fw-bold" data-id="${inv.id}" data-field="reference" value="${escapeHtml(inv.reference)}" title="<?php echo Text::_('JACTION_EDIT'); ?>">
+            </td>
             <td>${displayLink}</td>
             <td class="text-center">
                 <button type="button" class="btn btn-sm btn-danger" onclick="deleteInvoiceAjax(${inv.id})">
@@ -391,6 +400,23 @@ if (!empty($this->item->contracts)) {
     function renderInitialInvoices() {
         if(clientId === 0) return;
         invoicesData.forEach(inv => appendInvoiceRowToDOM(inv));
+        sortInvoicesByDateDesc();
+    }
+    function sortInvoicesByDateDesc() {
+        const tbody = document.getElementById('invoicesBody');
+        const rows = Array.from(tbody.querySelectorAll('tr[id^="invoice_row_"]'));
+        
+        rows.sort((a, b) => {
+            const inputA = a.querySelector('input[data-field="invoicedate"]');
+            const inputB = b.querySelector('input[data-field="invoicedate"]');
+            
+            const dateA = inputA ? inputA.value : '';
+            const dateB = inputB ? inputB.value : '';
+            
+            return dateB.localeCompare(dateA);
+        });
+
+        rows.forEach(row => tbody.appendChild(row));
     }
 
     async function addInvoiceAjax() {
@@ -428,6 +454,7 @@ if (!empty($this->item->contracts)) {
             
             if (data.success) {
                 appendInvoiceRowToDOM(data.invoice);
+                sortInvoicesByDateDesc();
                 resetNewInvoice();
             } else {
                 alert(txtErrPrefix + data.message);
@@ -605,4 +632,114 @@ if (!empty($this->item->contracts)) {
             });
         });
     });
+
+    // Store original value on focus to handle 'Escape' key
+    document.getElementById('invoicesBody').addEventListener('focusin', function(e) {
+        if (e.target.classList.contains('inv-inline-edit')) {
+            e.target.dataset.original = e.target.value;
+        }
+    });
+
+    // Handle Enter and Escape keys
+    document.getElementById('invoicesBody').addEventListener('keydown', function(e) {
+        if (e.target.classList.contains('inv-inline-edit')) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                e.target.blur(); // Blur triggers the 'change' event below
+            } else if (e.key === 'Escape') {
+                e.target.value = e.target.dataset.original;
+                e.target.blur();
+            }
+        }
+    });
+
+    // Trigger save when the field loses focus or date is picked
+    document.getElementById('invoicesBody').addEventListener('change', function(e) {
+        const target = e.target;
+        if (target.classList.contains('inv-inline-edit')) {
+            const id = target.dataset.id;
+            const field = target.dataset.field;
+            const value = target.value;
+            const original = target.dataset.original;
+
+            if (value.trim() !== '' && value !== original) {
+                saveInvoiceFieldAjax(id, field, value, target, original);
+            } else {
+                target.value = original; // Revert if empty
+            }
+        }
+    });
+
+    async function saveInvoiceFieldAjax(id, field, value, inputElement, originalValue) {
+        const formData = new FormData();
+        formData.append('id', id);
+        formData.append('field', field);
+        formData.append('value', value);
+        
+        const tokenStr = Joomla.getOptions('csrf.token');
+        if(tokenStr) formData.append(tokenStr, '1');
+
+        inputElement.disabled = true; // Prevent double-edits while saving
+
+        try {
+            const response = await fetch('index.php?option=com_contractor&task=client.updateInvoiceField&format=json', {
+                method: 'POST',
+                body: formData
+            });
+            const data = await response.json();
+            
+            if (data.success) {
+                inputElement.dataset.original = value;
+                if (field === 'invoicedate') {
+                    sortInvoicesByDateDesc();
+                }
+            } else {
+                alert(txtErrPrefix + data.message);
+                inputElement.value = originalValue;
+            }
+        } catch (err) {
+            console.error(err);
+            alert(txtErrNetwork);
+            inputElement.value = originalValue;
+        } finally {
+            inputElement.disabled = false;
+        }
+    }
+
+    // === Unsaved edits monitoring ===
+    let isFormDirty = false;
+
+    // 1. Listen on standard form fields
+    const formElement = document.getElementById('client-form');
+    
+    formElement.addEventListener('input', function(e) {
+        // Ignore if inside invoices table
+        if (!e.target.closest('#invoicesTable')) {
+            isFormDirty = true;
+        }
+    });
+    
+    formElement.addEventListener('change', function(e) {
+        if (!e.target.closest('#invoicesTable')) {
+            isFormDirty = true;
+        }
+    });
+
+    // 3. Capture Joomla! toolbar (cancel/close button)
+    const originalSubmitbutton = Joomla.submitbutton;
+    Joomla.submitbutton = function(task) {
+        if (task === 'client.cancel' && isFormDirty) {
+            if (!confirm(dirtywarn1)) {
+                return false; // Stoppe l'action
+            }
+        }
+        
+        // Anything else (or on user confirm) we deactivate the alert
+        isFormDirty = false; 
+        
+        if (typeof originalSubmitbutton === 'function') {
+            return originalSubmitbutton(task);
+        }
+    };
+
 </script>

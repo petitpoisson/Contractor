@@ -16,7 +16,7 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Controller;
 use Joomla\CMS\MVC\Controller\AdminController;
 
 /**
- * Clients List Controller
+ * Tags List Controller
  */
 class TagsController extends AdminController
 {
@@ -29,7 +29,7 @@ class TagsController extends AdminController
      *
      * @return  \Joomla\CMS\MVC\Model\BaseDatabaseModel
      */
-    public function getModel($name = 'Tags', $prefix = 'Administrator', $config = ['ignore_request' => true])
+    public function getModel($name = 'Tag', $prefix = 'Administrator', $config = ['ignore_request' => true])
     {
         return parent::getModel($name, $prefix, $config);
     }

@@ -53,6 +53,8 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::publish('contracts.publish', 'JTOOLBAR_PUBLISH', true);
         ToolbarHelper::unpublish('contracts.unpublish', 'JTOOLBAR_UNPUBLISH', true);
         ToolbarHelper::deleteList('JGLOBAL_CONFIRM_DELETE', 'contract.delete');
+        // custom(task, icon, iconOver, alt, listSelect)
+        ToolbarHelper::custom('contracts.duplicate', 'copy', 'copy', 'JTOOLBAR_DUPLICATE', true);
         ToolbarHelper::custom('contracts.email', 'mail', 'mail', 'COM_CONTRACTOR_BTN_SEND_MESSAGE', true);
     }
 }

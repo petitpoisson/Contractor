@@ -14,27 +14,12 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Controller;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Controller\FormController;
-use Joomla\CMS\Language\Text;
 
 /**
- * Client Form Controller
+ * Tag Form Controller
  */
 class TagController extends FormController
 {
-    public function delete()
-    {
-        $pks = $app->input->post->get('cid', [], 'array');
-        $userId = $this->app->getIdentity()->id;
-        $model = $this->getModel('Tag');
-        
-        foreach ($pks as $pk) {
-            $pk = (int)$pk;
-
-            if ($model->delete($pk)) {
-                $this->app->enqueueMessage(Text::_('COM_CONTRACTOR_TAGS_DELETED'));
-            } else {
-                $this->app->enqueueMessage($model->getError(), 'error');
-            }
-        $this->setRedirect('index.php?option=com_contractor&view=tags');    }
-        }
+    // The custom delete() method has been entirely removed.
+    // List operations are natively handled by TagsController (AdminController).
 }

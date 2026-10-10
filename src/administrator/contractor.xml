@@ -7,7 +7,7 @@
     <license>GNU General Public License version 3 or later</license>
     <authorEmail>xavier@petitpoisson.be</authorEmail>
     <authorUrl>https://www.petitpoisson.be</authorUrl>
-    <version>1.0.1</version>
+    <version>1.0.2</version>
     <description>COM_CONTRACTOR_XML_DESCRIPTION</description>
 
     <namespace path="src">XavierSpirlet\Component\Contractor</namespace>
@@ -24,6 +24,11 @@
             <file driver="mysql" charset="utf8">sql/uninstall.mysql.utf8.sql</file>
         </sql>
     </uninstall>
+    <update>
+        <schemas>
+            <schemapath type="mysql">sql/updates/mysql</schemapath>
+        </schemas>
+    </update>
 
     <media destination="com_contractor" folder="media">
         <filename>joomla.asset.json</filename>
@@ -60,6 +65,8 @@
             <folder>sql</folder>
             <folder>src</folder>
             <folder>tmpl</folder>
+            <file>access.xml</file>
+            <file>config.xml</file>
         </files>
     </administration>
 

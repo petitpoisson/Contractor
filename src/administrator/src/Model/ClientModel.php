@@ -226,4 +226,38 @@ class ClientModel extends AdminModel
 
         return true;
     }
+    /**
+     * Update a specific field of an invoice
+     * 
+     * @param int    $id    The invoice ID
+     * @param string $field The field name (invoicedate or reference)
+     * @param string $value The new value
+     * @return boolean
+     */
+    public function updateInvoiceField($id, $field, $value)
+    {
+        $db = $this->getDatabase();
+        $id = (int) $id;
+
+        $query = $db->getQuery(true)
+                    ->update($db->quoteName('#__ctr_invoices'))
+                    ->set($db->quoteName($field) . ' = ' . $db->quote($value))
+                    ->where($db->quoteName('id') . ' = ' . $id);
+        $db->setQuery($query)->execute();
+        
+        // Fetch invoice details for the log
+        $query = $db->getQuery(true)
+                    ->select($db->quoteName(['client_id', 'reference']))
+                    ->from($db->quoteName('#__ctr_invoices'))
+                    ->where($db->quoteName('id') . ' = ' . $id);
+        $inv = $db->setQuery($query)->loadObject();
+
+        if ($inv) {
+            $userId = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
+            $desc   = "Joomla user ({$userId}) updated invoice ({$inv->reference}) field {$field} to '{$value}'";
+            \XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper::writeLog($inv->client_id, 0, $desc);
+        }
+
+        return true;
+    }
 }

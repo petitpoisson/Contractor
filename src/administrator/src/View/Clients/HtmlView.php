@@ -50,5 +50,7 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::addNew('client.add');
         ToolbarHelper::editList('client.edit');
         ToolbarHelper::deleteList('JGLOBAL_CONFIRM_DELETE', 'clients.delete');
+        // custom(task, icon, iconOver, alt, listSelect)
+        ToolbarHelper::custom('clients.duplicate', 'copy', 'copy', 'JTOOLBAR_DUPLICATE', true);
     }
 }

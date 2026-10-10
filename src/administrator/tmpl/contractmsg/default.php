@@ -39,7 +39,7 @@ $engineName = $engineMap[$engineType] ?? $engineMap[0];
             <div class="card shadow-sm mb-3">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <strong><span class="icon-mail" aria-hidden="true"></span> <?php echo Text::_('COM_CONTRACTOR_MSG_SETTINGS_TITLE'); ?></strong>
-                    <span class="badge bg-light text-dark"><?php echo Text::_('COM_CONTRACTOR_MSG_ENGINE_LABEL'); ?>: <?php echo $engineName; ?></span>
+                    <span class="badge bg-light text-dark"><?php echo Text::_('COM_CONTRACTOR_MSG_ENGINE_LABEL').$engineName; ?></span>
                 </div>
                 <div class="card-body">
                     <div class="row mb-2">

@@ -55,7 +55,19 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::title($isNew ? \Joomla\CMS\Language\Text::_('COM_CONTRACTOR_NEW_CLIENT_TITLE') : \Joomla\CMS\Language\Text::_('COM_CONTRACTOR_EDIT_CLIENT_TITLE'), 'user');
 
         ToolbarHelper::apply('client.apply');
-        ToolbarHelper::save('client.save');
+        $toolbar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
+        $saveGroup = $toolbar->dropdownButton('save-group');
+        $saveGroup->configure(
+            function (\Joomla\CMS\Toolbar\Toolbar $childBar) use ($isNew) {
+                $childBar->save('client.save'); 
+                $childBar->save2new('client.save2new'); 
+                if (!$isNew) {
+                    $childBar->save2copy('client.save2copy'); 
+                }
+            }
+        );
+
+        // Le bouton Annuler / Fermer reste à l'extérieur du groupe
         ToolbarHelper::cancel('client.cancel', $isNew ? 'JTOOLBAR_CANCEL' : 'JTOOLBAR_CLOSE');
     }
 }

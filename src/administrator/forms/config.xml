@@ -79,8 +79,7 @@
         
         <field name="smtp_password" type="password" label="COM_CONTRACTOR_SMTP_PASS" showon="mailengine:2" />
 
-        <field name="signature" type="editor" label="COM_CONTRACTOR_SIGNATURE" filter="Joomla\CMS\Component\ComponentHelper::filterText" buttons="false" />
-    </fieldset>
+        <field name="signature" type="editor" label="COM_CONTRACTOR_SIGNATURE" filter="Joomla\CMS\Component\ComponentHelper::filterText" buttons="false" />    </fieldset>
 
     <fieldset name="frontend" addfieldprefix="XavierSpirlet\Component\Contractor\Administrator\Field">
         <field name="font_framework" type="Frameworkicon" label="COM_CONTRACTOR_CONFIGURATION_CSSFW" default="0" />

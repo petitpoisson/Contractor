@@ -47,7 +47,18 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::title("Contractor - {$title}", 'file');
         
         ToolbarHelper::apply('contract.apply', 'JTOOLBAR_APPLY');
-        ToolbarHelper::save('contract.save', 'JTOOLBAR_SAVE');
+        $toolbar = \Joomla\CMS\Toolbar\Toolbar::getInstance('toolbar');
+        $saveGroup = $toolbar->dropdownButton('save-group');
+        $saveGroup->configure(
+            function (\Joomla\CMS\Toolbar\Toolbar $childBar) use ($isNew) {
+                $childBar->save('contract.save'); 
+                $childBar->save2new('contract.save2new');
+                if (!$isNew) {
+                    $childBar->save2copy('contract.save2copy'); 
+                }
+            }
+        );
+
         ToolbarHelper::cancel('contract.cancel', 'JTOOLBAR_CLOSE');
 
         if (!$isNew) {

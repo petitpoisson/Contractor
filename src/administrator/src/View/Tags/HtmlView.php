@@ -48,6 +48,6 @@ class HtmlView extends BaseHtmlView
         ToolbarHelper::title(\Joomla\CMS\Language\Text::_('COM_CONTRACTOR_TAGLIST'), 'tags');
         ToolbarHelper::addNew('tag.add');
         ToolbarHelper::editList('tag.edit');
-        ToolbarHelper::deleteList('JGLOBAL_CONFIRM_DELETE', 'tag.delete');
+        ToolbarHelper::deleteList('JGLOBAL_CONFIRM_DELETE', 'tags.delete');
     }
 }

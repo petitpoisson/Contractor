@@ -33,7 +33,51 @@ class ContractsController extends AdminController
     {
         return parent::getModel($name, $prefix, $config);
     }
+    public function duplicate()
+    {
+        // Check for request forgeries
+        $this->checkToken();
 
+        // Get items to duplicate from the request
+        $pks = $this->input->post->get('cid', [], 'array');
+
+        try {
+            if (empty($pks)) {
+                throw new \Exception(\Joomla\CMS\Language\Text::_('JERROR_NO_ITEMS_SELECTED'));
+            }
+
+            // We need the singular model to handle table operations properly
+            $model = $this->getModel('Contract', 'Administrator', ['ignore_request' => true]);
+            $table = $model->getTable();
+
+            foreach ($pks as $pk) {
+                $table->reset();
+                
+                // Load the original item
+                if ($table->load($pk)) {
+                    // Unset the primary key to create a new record
+                    $table->id = 0;
+                    
+                    // Force unpublished state 
+                    $table->published = 0;
+                    
+                    // Optional: Append " (Copy)" to the name/title if desired
+                    $table->name = $table->name . ' (Copy)';
+
+                    // Save the duplicated record
+                    if (!$table->store()) {
+                        throw new \Exception($table->getError());
+                    }
+                }
+            }
+
+            $this->setMessage(\Joomla\CMS\Language\Text::_('COM_CONTRACTOR_ITEMS_DUPLICATED'));
+        } catch (\Exception $e) {
+            $this->setMessage($e->getMessage(), 'error');
+        }
+
+        $this->setRedirect(\Joomla\CMS\Router\Route::_('index.php?option=com_contractor&view=contracts', false));
+    }
     public function email()
     {
         $app = \Joomla\CMS\Factory::getApplication();
