@@ -25,9 +25,6 @@ use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
  */
 class ContractmsgController extends BaseController
 {
-    /**
-     * Task triggered by the "Cancel" button.
-     */
     public function cancel()
     {
         $this->checkToken();
@@ -44,30 +41,46 @@ class ContractmsgController extends BaseController
         $this->setRedirect(Route::_($url, false));
     }
 
-    /**
-     * Task triggered by the "Send message" button.
-     */
     public function send()
+    {
+        $this->processEmail(false);
+    }
+
+    public function sendTest()
+    {
+        $this->processEmail(true);
+    }
+
+    /**
+     * Traite l'envoi de l'e-mail (Normal ou Test)
+     */
+    private function processEmail(bool $isTest)
     {
         $this->checkToken();
         $app = Factory::getApplication();
         
-        // Retrieve inputs from the form
-        $id         = $app->input->getInt('id', 0);
-        $returnCtx  = $app->input->getString('return', 'contracts');
-        $mailTo     = $app->input->getString('mail_to', '');
-        $mailFrom   = $app->input->getString('mail_from', '');
+        $id           = $app->input->getInt('id', 0);
+        $returnCtx    = $app->input->getString('return', 'contracts');
+        $mailFrom     = $app->input->getString('mail_from', '');
         $mailFromname = $app->input->getString('mail_from_name', '');
-        $mailReply  = $app->input->getString('mail_replyto', '');
-        $mailSubj   = $app->input->getString('mail_subject', '');
-        $mailSource = $app->input->get('mail_source', '', 'raw');
+        $mailReply    = $app->input->getString('mail_replyto', '');
+        $mailSubj     = $app->input->getString('mail_subject', '');
+        $mailSource   = $app->input->get('mail_source', '', 'raw');
 
-        // Determine redirect URL based on context
-        $url = ($returnCtx === 'contract' && $id > 0) 
-            ? 'index.php?option=com_contractor&view=contract&layout=edit&id=' . $id 
-            : 'index.php?option=com_contractor&view=contracts';
+        // Configuration selon le type d'envoi
+        if ($isTest) {
+            $mailTo = $app->input->getString('test_email', '');
+            $mailSubj = '[TEST] ' . $mailSubj;
+            // On reste sur la même page après un test
+            $url = 'index.php?option=com_contractor&view=contractmsg&id=' . $id . '&return=' . $returnCtx;
+        } else {
+            $mailTo = $app->input->getString('mail_to', '');
+            // On redirige vers la liste ou le contrat après un envoi réel
+            $url = ($returnCtx === 'contract' && $id > 0) 
+                ? 'index.php?option=com_contractor&view=contract&layout=edit&id=' . $id 
+                : 'index.php?option=com_contractor&view=contracts';
+        }
 
-        // Basic validation
         if (empty($mailTo) || empty($mailSource)) {
             $app->enqueueMessage(Text::_('COM_CONTRACTOR_MSG_ERR_MISSING_DATA'), 'error');
             $this->setRedirect(Route::_($url, false));
@@ -75,7 +88,6 @@ class ContractmsgController extends BaseController
         }
 
         // --- TAG REPLACEMENT LOGIC ---
-        // Boot the model properly to retrieve the replacement dictionary
         $mvcFactory  = $app->bootComponent('com_contractor')->getMVCFactory();
         $model       = $mvcFactory->createModel('Contractmsg', 'Administrator', ['ignore_request' => true]);
         $messageData = $model->getMessageData($id);
@@ -87,9 +99,7 @@ class ContractmsgController extends BaseController
                 $mailSource
             );
         }
-        // -----------------------------
 
-        // Fetch Client ID for logging purposes
         $db = Factory::getContainer()->get(DatabaseInterface::class);
         $query = $db->getQuery(true)
             ->select($db->quoteName('client_id'))
@@ -98,34 +108,26 @@ class ContractmsgController extends BaseController
         $db->setQuery($query);
         $clientId = (int) $db->loadResult();
 
-        // Load configuration to determine Mail Engine
         $config = ContractorHelper::getConfig();
         $engine = (int) ($config['mailengine'] ?? 0);
 
         try {
-            // Instantiate Joomla Mailer
             $mailer = Factory::getMailer();
 
-            // Configure Mailer based on chosen engine
             if ($engine === 1) {
-                // PHP mail() / sendmail
                 $mailer->isMail(); 
             } elseif ($engine === 2) {
-                // Custom SMTP
                 $mailer->isSMTP();
                 $mailer->Host = $config['smtp_host'] ?? 'localhost';
                 $mailer->Port = (int) ($config['smtp_port'] ?? 25);
                 
                 $security = $config['smtp_security'] ?? 'none';
                 $mailer->SMTPSecure = ($security === 'none') ? '' : $security;
-                
-                // Evite que PHPMailer force le TLS si l'utilisateur a explicitement demandé 'none'
                 $mailer->SMTPAutoTLS = ($security !== 'none');
                 
                 $auth = $config['smtp_auth'] ?? 'none';
                 if ($auth !== 'none') {
                     $mailer->SMTPAuth = true;
-                    // Options: 'LOGIN', 'PLAIN', 'CRAM-MD5' (converted to uppercase for PHPMailer)
                     $mailer->AuthType = strtoupper($auth);
                     $mailer->Username = $config['smtp_username'] ?? '';
                     $mailer->Password = $config['smtp_password'] ?? '';
@@ -134,8 +136,7 @@ class ContractmsgController extends BaseController
                 }
             }
 
-            // Prepare Email Content and Headers
-            $mailer->setSender([$mailFrom, $mailfromname]);
+            $mailer->setSender([$mailFrom, $mailFromname]);
             $mailer->addRecipient($mailTo);
             
             if (!empty($mailReply)) {
@@ -144,30 +145,46 @@ class ContractmsgController extends BaseController
             
             $mailer->setSubject($mailSubj);
             $mailer->isHtml(true);
-            $mailer->setBody($mailSource); // This now contains the fully replaced HTML
 
-            // Execute Send
+            $htmlBody = '<!DOCTYPE html>
+            <html lang="fr">
+            <head>
+                <meta charset="utf-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>' . htmlspecialchars($mailSubj) . '</title>
+            </head>
+            <body style="font-family: Arial, sans-serif; font-size: 14px; line-height: 1.5; color: #333333; margin: 0; padding: 20px;">' 
+            . $mailSource . 
+            '</body>
+            </html>';
+            
+            $mailer->setBody($mailSource); 
+
             $result = $mailer->Send();
 
             if ($result !== true) {
                 throw new \Exception(Text::_('COM_CONTRACTOR_MSG_ERR_SEND_FAILED'));
             }
 
-            // Log Success and notify user
-            $logMsg = Text::sprintf('COM_CONTRACTOR_LOG_MSG_SENT', $mailTo);
-            ContractorHelper::writeLog($clientId, 0, $logMsg);
-            $app->enqueueMessage(Text::_('COM_CONTRACTOR_MSG_SENT_SUCCESS'), 'success');
+            if ($isTest) {
+                // Message d'alerte spécifique pour le test (sans l'enregistrer dans les logs du client)
+                $app->enqueueMessage("Message de test envoyé avec succès à {$mailTo}.", 'success');
+            } else {
+                $logMsg = Text::sprintf('COM_CONTRACTOR_LOG_MSG_SENT', $mailTo);
+                ContractorHelper::writeLog($clientId, 0, $logMsg);
+                $app->enqueueMessage(Text::_('COM_CONTRACTOR_MSG_SENT_SUCCESS'), 'success');
+            }
 
         } catch (\Exception $e) {
-            // Log Error and notify user safely
             $errorMsg = $e->getMessage();
-            $logMsg = Text::sprintf('COM_CONTRACTOR_LOG_MSG_FAILED', $mailTo, $errorMsg);
-            ContractorHelper::writeLog($clientId, 2, $logMsg);
-            
             $app->enqueueMessage(Text::sprintf('COM_CONTRACTOR_MSG_SEND_EXCEPTION', $errorMsg), 'error');
+            
+            if (!$isTest) {
+                $logMsg = Text::sprintf('COM_CONTRACTOR_LOG_MSG_FAILED', $mailTo, $errorMsg);
+                ContractorHelper::writeLog($clientId, 2, $logMsg);
+            }
         }
 
-        // Return to previous view
         $this->setRedirect(Route::_($url, false));
     }
 }

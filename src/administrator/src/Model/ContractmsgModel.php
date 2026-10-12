@@ -15,6 +15,7 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Model;
 
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
 use Joomla\CMS\Factory;
+use Joomla\CMS\Uri\Uri;
 use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
 
 /**
@@ -26,7 +27,7 @@ class ContractmsgModel extends BaseDatabaseModel
     {
         $db = $this->getDatabase();
 
-        // 1. Get Contract and Client Data (Added a.rem)
+        // 1. Get Contract and Client Data
         $query = $db->getQuery(true)
             ->select([
                 'a.id', 'a.name AS contract_name', 'a.valid_thru', 'a.rem', 
@@ -53,6 +54,19 @@ class ContractmsgModel extends BaseDatabaseModel
 
         // 3. Get Configuration
         $config = ContractorHelper::getConfig();
+
+        // --- NOUVEAU : Fonction utilitaire pour corriger les images relatives ---
+        $rootUrl = rtrim(Uri::root(), '/');
+        $fixImages = function($html) use ($rootUrl) {
+            return preg_replace_callback(
+                '/(src=")(?!https?:\/\/|\/\/|data:)([^"]+)(")/i',
+                function ($matches) use ($rootUrl) {
+                    return $matches[1] . $rootUrl . '/' . ltrim($matches[2], '/') . $matches[3];
+                },
+                $html
+            );
+        };
+        // ------------------------------------------------------------------------
 
         // 4. Calculate Total and Build Services List HTML
         $totalCents = 0;
@@ -83,7 +97,7 @@ class ContractmsgModel extends BaseDatabaseModel
         $servicesListHtml  = $linesHtml;
         $servicesListHtml .= "<p style=\"text-align: right; font-weight: bold;\">Total: " . $totalEuros . " " . $currency . "</p>\n";
 
-        // 5. Build Replacement Dictionary for the Live Preview and Final Sending
+        // 5. Build Replacement Dictionary (Images corrigées dans la signature)
         $replacements = [
             '{client_name}'        => $data->client_name ?? '',
             '{contract_name}'      => $data->contract_name ?? '',
@@ -91,19 +105,23 @@ class ContractmsgModel extends BaseDatabaseModel
             '{currency}'           => $currency,
             '{total_price}'        => $totalEuros,
             '{serviceslist}'       => $servicesListHtml,
-            '{rem}'                => $data->rem ?? '', // Added Remarks tag mapping
-            '{signature}'          => "<p>" . nl2br($config['signature'] ?? '') . "</p>\n"
+            '{rem}'                => $data->rem ?? '',
+            // SUPPRESSION de <p> et nl2br() : la configuration contient déjà du HTML propre
+            '{signature}'          => $fixImages($config['signature'] ?? '')
         ];
 
-        // 6. Assemble initial raw source (Template text + default pseudo-tags if missing)
-        $rawSource = $data->mailtext ?? '';
+        // 6. Assemble initial raw source (Images corrigées dans le texte brut)
+        $rawSource = $fixImages($data->mailtext ?? '');
         
-        // Append {serviceslist} if not present in the client's default text
+        // NETTOYAGE ANTI-TINYMCE : 
+        // Retire les <p> orphelins autour des tags qui génèrent des éléments de type "bloc" (tableaux) ou qui ont déjà leurs propres <p>
+        $rawSource = preg_replace('/<p>\s*({serviceslist})\s*<\/p>/i', '$1', $rawSource);
+        $rawSource = preg_replace('/<p>\s*({signature})\s*<\/p>/i', '$1', $rawSource);
+        
         if (strpos($rawSource, '{serviceslist}') === false) {
             $rawSource .= "\n\n{serviceslist}";
         }
         
-        // Append {signature} if not present
         if (strpos($rawSource, '{signature}') === false) {
             $rawSource .= "\n\n{signature}";
         }

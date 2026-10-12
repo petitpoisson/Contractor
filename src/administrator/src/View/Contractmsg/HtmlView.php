@@ -48,6 +48,7 @@ class HtmlView extends BaseHtmlView
 
     protected function addToolbar(): void
     {
+        Factory::getApplication()->input->set('hidemainmenu', true);
         ToolbarHelper::title(\Joomla\CMS\Language\Text::_('COM_CONTRACTOR_MSG_VIEW_TITLE'), 'mail');
         ToolbarHelper::custom('contractmsg.send', 'envelope', 'envelope', 'COM_CONTRACTOR_MSG_BTN_SEND', false);
         ToolbarHelper::cancel('contractmsg.cancel', 'JTOOLBAR_CANCEL');

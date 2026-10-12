@@ -102,8 +102,11 @@ $engineName = $engineMap[$engineType] ?? $engineMap[0];
 
         <div class="col-md-6" style="min-width: 0;">
             <div class="card shadow-sm mb-4" style="height: 100%;">
-                <div class="card-header bg-secondary text-white">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
                     <strong><span class="icon-eye" aria-hidden="true"></span> <?php echo Text::_('COM_CONTRACTOR_MSG_PREVIEW_TITLE'); ?></strong>
+                    <button type="button" class="btn btn-sm btn-light text-dark" onclick="sendTestEmail()">
+                        <span class="icon-mail" aria-hidden="true"></span> <?php echo Text::_('COM_CONTRACTOR_MSG_PREVIEW_SENDTEST'); ?>
+                    </button>
                 </div>
                 
                 <div class="card-body bg-light border-bottom p-3" style="font-family: Arial, sans-serif; font-size: 14px;">
@@ -165,6 +168,37 @@ $engineName = $engineMap[$engineType] ?? $engineMap[0];
 <script>
     // Injects the PHP replacements dictionary directly into Javascript
     const tagReplacements = <?php echo json_encode($this->data->replacements); ?>;
+
+    function sendTestEmail() {
+        // Default to site default e-mail
+        const defaultTestEmail = "<?php echo $this->escape(Factory::getApplication()->get('mailfrom')); ?>";
+        const testEmail = prompt("<?php echo Text::_('COM_CONTRACTOR_MSG_TESTADR'); ?>", defaultTestEmail);
+        if (testEmail) {
+            if (!testEmail.includes('@')) {
+                alert("<?php echo Text::_('COM_CONTRACTOR_MSG_TESTINV'); ?>");
+                return;
+            }
+            const form = document.getElementById('adminForm');
+            
+            let testInput = document.getElementById('test_email_input');
+            if (!testInput) {
+                testInput = document.createElement('input');
+                testInput.type = 'hidden';
+                testInput.name = 'test_email';
+                testInput.id = 'test_email_input';
+                form.appendChild(testInput);
+            }
+            testInput.value = testEmail;
+            
+            // Soumet le formulaire avec la tâche d'envoi de test
+            if (window.Joomla && window.Joomla.submitbutton) {
+                window.Joomla.submitbutton('contractmsg.sendTest');
+            } else {
+                form.task.value = 'contractmsg.sendTest';
+                form.submit();
+            }
+        }
+    }
 
     document.addEventListener('DOMContentLoaded', function() {
         const sourceEditor     = document.getElementById('mail_source');
@@ -246,10 +280,12 @@ $engineName = $engineMap[$engineType] ?? $engineMap[0];
         if (inputSubject) inputSubject.addEventListener('input', updateHeaderPreviews);
         if (inputFromN)   inputFromN.addEventListener('input', updateHeaderPreviews);
     });
+    
     // Intercept Joomla toolbar submission to add confirmation prompt
     if (window.Joomla && window.Joomla.submitbutton) {
         const originalSubmit = window.Joomla.submitbutton;
         window.Joomla.submitbutton = function(task) {
+            // Demander confirmation UNIQUEMENT si on envoie le vrai message, pas pour le test
             if (task === 'contractmsg.send') {
                 if (!confirm('<?php echo Text::_("COM_CONTRACTOR_MSG_CONFIRM_SEND"); ?>')) {
                     return false; // Cancel submission

@@ -68,40 +68,30 @@ if (!empty($this->item->contracts)) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($this->item->contracts as $contract) : ?>
+                        <?php foreach ($this->item->contracts as$contract) : ?>
                             <?php 
-                            $formattedStart = HTMLHelper::_('date', $contract->date_start, 'd F Y');
-                            $formattedEnd   = HTMLHelper::_('date', $contract->valid_thru, 'd F Y');
-                            $startDateObj     = Factory::getDate($contract->date_start);
-                            $validDateForSort = Factory::getDate($contract->valid_thru);
-                            $isUnpublished = ($contract->published == 0);
-                            $isExpired     = false;
+                            $formattedStart = HTMLHelper::_('date', $contract->date_start, 'd F Y');$formattedEnd   = HTMLHelper::_('date', $contract->valid_thru, 'd F Y');$startDateObj     = Factory::getDate($contract->date_start);$validDateForSort = Factory::getDate($contract->valid_thru);$isUnpublished = ($contract->published == 0);$isExpired     = false;
                             $isWarning     = false;
 
-                            if (!empty($contract->valid_thru) && $contract->valid_thru !== '0000-00-00 00:00:00') {
+                            if (!empty($contract->valid_thru) &&$contract->valid_thru !== '0000-00-00 00:00:00') {
                                 $validDate = new \DateTime($contract->valid_thru);
-                                $validDate->setTime(0, 0, 0);
-                                $daysLeft = (int) $today->diff($validDate)->format('%R%a');
-                                if ($daysLeft < 0) $isExpired = true;
-                                elseif ($daysLeft <= $warnDays) $isWarning = true;
+                                $validDate->setTime(0, 0, 0);$daysLeft = (int) $today->diff($validDate)->format('%R%a');
+                                if ($daysLeft < 0)$isExpired = true;
+                                elseif ($daysLeft <= $warnDays)$isWarning = true;
                             }
 
-                            $rowClass      = $isUnpublished ? 'text-muted' : '';
-                            $dateCellClass = '';
-                            $statusIcon    = '';
+                            $rowClass      =$isUnpublished ? 'text-muted' : '';
+                            $dateCellClass = '';$statusIcon    = '';
 
                             if ($isExpired) {
-                                if (!$isUnpublished) $dateCellClass = 'bg-danger text-white';
-                                $statusIcon = '<span class="icon-exclamation-circle text-danger" style="font-size: 24px;" aria-hidden="true" title="' . Text::_('COM_CONTRACTOR_STATUS_EXPIRED') . '"></span>';
+                                if (!$isUnpublished) $dateCellClass = 'bg-danger text-white';$statusIcon = '<span class="icon-exclamation-circle text-danger" style="font-size: 24px;" aria-hidden="true" title="' . Text::_('COM_CONTRACTOR_STATUS_EXPIRED') . '"></span>';
                             } elseif ($isWarning) {
-                                if (!$isUnpublished) $dateCellClass = 'bg-warning text-dark';
-                                $statusIcon = '<span class="icon-exclamation-triangle text-warning" style="font-size: 24px;" aria-hidden="true" title="' . Text::_('COM_CONTRACTOR_STATUS_EXPIRING_SOON') . '"></span>';
+                                if (!$isUnpublished) $dateCellClass = 'bg-warning text-dark';$statusIcon = '<span class="icon-exclamation-triangle text-warning" style="font-size: 24px;" aria-hidden="true" title="' . Text::_('COM_CONTRACTOR_STATUS_EXPIRING_SOON') . '"></span>';
                             }
                             
                             $editContractLink = Route::_('index.php?option=com_contractor&task=contract.edit&id=' . (int) $contract->id);
                             
-                            if ($isUnpublished) {
-                                $publishIcon = '<span class="icon-unpublish" aria-hidden="true" title="' . Text::_('COM_CONTRACTOR_STATUS_UNPUBLISHED') . '"></span>';
+                            if ($isUnpublished) {$publishIcon = '<span class="icon-unpublish" aria-hidden="true" title="' . Text::_('COM_CONTRACTOR_STATUS_UNPUBLISHED') . '"></span>';
                             } else {
                                 $publishIcon = '<span class="icon-publish text-success" aria-hidden="true" title="' . Text::_('COM_CONTRACTOR_STATUS_PUBLISHED') . '"></span>';
                             }
@@ -113,7 +103,7 @@ if (!empty($this->item->contracts)) {
                                 <td data-sort="<?php echo $startDateObj->toUnix(); ?>"><?php echo $formattedStart; ?></td>
                                 <td><?php echo $statusIcon; ?></td>
                                 <td data-sort="<?php echo $validDateForSort->toUnix(); ?>" class="<?php echo $dateCellClass; ?> align-middle">
-                                    <?php echo ($contract->valid_thru && $contract->valid_thru != '0000-00-00 00:00:00') ? $formattedEnd : '-'; ?>
+                                    <?php echo ($contract->valid_thru && $contract->valid_thru != '0000-00-00 00:00:00') ?$formattedEnd : '-'; ?>
                                 </td>
                                 <td class="text-center">
                                     <a href="<?php echo $editContractLink; ?>" class="btn btn-sm btn-primary">
@@ -240,16 +230,13 @@ if (!empty($this->item->contracts)) {
                         </tr>
                     </thead>
                     <tbody>
-                        <?php foreach ($this->item->logs as $log) : ?>
+                        <?php foreach ($this->item->logs as$log) : ?>
                             <?php
-                                $levelLabel = Text::_('COM_CONTRACTOR_LOG_INFO');
-                                $badgeClass = 'bg-info';
+                                $levelLabel = Text::_('COM_CONTRACTOR_LOG_INFO');$badgeClass = 'bg-info';
                                 if ($log->level == 1) {
-                                    $levelLabel = Text::_('COM_CONTRACTOR_LOG_WARNING');
-                                    $badgeClass = 'bg-warning text-dark';
+                                    $levelLabel = Text::_('COM_CONTRACTOR_LOG_WARNING');$badgeClass = 'bg-warning text-dark';
                                 } elseif ($log->level == 2) {
-                                    $levelLabel = Text::_('COM_CONTRACTOR_LOG_ERROR');
-                                    $badgeClass = 'bg-danger';
+                                    $levelLabel = Text::_('COM_CONTRACTOR_LOG_ERROR');$badgeClass = 'bg-danger';
                                 }
                             ?>
                             <tr>
@@ -272,19 +259,12 @@ if (!empty($this->item->contracts)) {
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
 
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
 <style>
     /* Animation et gestion de la largeur des champs */
     .transition-width { transition: width 0.3s ease, flex 0.3s ease; }
     .w-50 { width: 50% !important; }
     .w-100 { width: 100% !important; }
 
-    /* Styles Quill */
-    .ql-toolbar.ql-snow { border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem; border-color: #dee2e6; background-color: #f8f9fa; }
-    .ql-container.ql-snow { border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; border-color: #dee2e6; font-family: inherit; font-size: inherit; }
-    textarea.source-mode-active { display: block !important; width: 100%; height: 250px; font-family: Consolas, monospace; font-size: 14px; border: 1px solid #dee2e6; border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; padding: 10px; resize: vertical; }
     .inv-editable:hover { outline: 1px dashed #ccc; background: #f8f9fa; }
     .cursor-pointer { cursor: pointer; }
     .inv-inline-edit { transition: all 0.2s; }
@@ -309,9 +289,6 @@ if (!empty($this->item->contracts)) {
     const clientId = <?php echo $clientId; ?>;
     const rootUrl  = "<?php echo Uri::root(); ?>";
     let invoicesData = <?php echo json_encode($this->item->invoices ?? []); ?>;
-
-    let quillMailtext = null;
-    let isSourceMode = false;
 
     function escapeHtml(unsafe) {
         if (!unsafe) return '';
@@ -402,6 +379,7 @@ if (!empty($this->item->contracts)) {
         invoicesData.forEach(inv => appendInvoiceRowToDOM(inv));
         sortInvoicesByDateDesc();
     }
+
     function sortInvoicesByDateDesc() {
         const tbody = document.getElementById('invoicesBody');
         const rows = Array.from(tbody.querySelectorAll('tr[id^="invoice_row_"]'));
@@ -547,86 +525,27 @@ if (!empty($this->item->contracts)) {
             });
         });
 
-        // Quill init
-        const joomlaTextarea = document.getElementById('jform_mailtext'); 
-        if (joomlaTextarea) {
-            joomlaTextarea.style.display = 'none';
-            const editorDiv = document.createElement('div');
-            editorDiv.id = 'editor-mailtext';
-            editorDiv.style.height = '250px';
-            editorDiv.style.backgroundColor = '#fff';
-            joomlaTextarea.parentNode.insertBefore(editorDiv, joomlaTextarea.nextSibling);
-
-            const icons = Quill.import('ui/icons');
-            icons['source'] = '<svg viewBox="0 0 18 18"><polyline class="ql-even ql-stroke" points="5 7 3 9 5 11"></polyline><polyline class="ql-even ql-stroke" points="13 7 15 9 13 11"></polyline><line class="ql-even ql-stroke" x1="10" x2="8" y1="5" y2="13"></line></svg>';
-
-            const toolbarOptions = [
-                ['bold', 'italic', 'underline'],
-                [{ 'color': [] }],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                ['link', 'clean'],
-                ['source']
-            ];
-
-            editorDiv.innerHTML = joomlaTextarea.value;
-
-            quillMailtext = new Quill(editorDiv, {
-                theme: 'snow',
-                modules: { 
-                    toolbar: {
-                        container: toolbarOptions,
-                        handlers: {
-                            'source': function() {
-                                const toolbarButton = this.container.querySelector('.ql-source');
-                                isSourceMode = !isSourceMode;
-
-                                if (isSourceMode) {
-                                    let html = quillMailtext.getSemanticHTML().replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ');
-                                    if (html === '<p><br></p>' || html === '<p></p>') html = '';
-                                    joomlaTextarea.value = html;
-                                    
-                                    editorDiv.style.display = 'none';
-                                    joomlaTextarea.classList.add('source-mode-active');
-                                    toolbarButton.classList.add('ql-active');
-                                } else {
-                                    quillMailtext.clipboard.dangerouslyPasteHTML(joomlaTextarea.value);
-                                    joomlaTextarea.classList.remove('source-mode-active');
-                                    joomlaTextarea.style.display = 'none';
-                                    editorDiv.style.display = 'block';
-                                    toolbarButton.classList.remove('ql-active');
-                                }
-                            }
-                        }
-                    } 
-                }
-            });
-
-            quillMailtext.on('text-change', function() {
-                if (!isSourceMode) {
-                    let html = quillMailtext.getSemanticHTML().replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ');
-                    if (html === '<p><br></p>' || html === '<p></p>') html = '';
-                    joomlaTextarea.value = html;
-                }
-            });
-        }
-
-        // Tag insertion logic correctly wrapped
+        // Joomla native editor tag insertion
         document.querySelectorAll('.tag-insert').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault(); 
                 const tag = this.getAttribute('data-tag');
-                if (isSourceMode && joomlaTextarea) {
-                    const start = joomlaTextarea.selectionStart;
-                    const end = joomlaTextarea.selectionEnd;
-                    const text = joomlaTextarea.value;
-                    joomlaTextarea.value = text.slice(0, start) + tag + text.slice(end);
-                    joomlaTextarea.selectionStart = joomlaTextarea.selectionEnd = start + tag.length;
-                    joomlaTextarea.focus();
-                } else if (quillMailtext) {
-                    const range = quillMailtext.getSelection(true); 
-                    if (range) {
-                        quillMailtext.insertText(range.index, tag);
-                        quillMailtext.setSelection(range.index + tag.length);
+                const editorId = 'jform_mailtext'; // Assuming the field ID is jform_mailtext
+                
+                // If Joomla standard editor API is available (e.g. TinyMCE, CodeMirror)
+                if (window.Joomla && window.Joomla.editors && window.Joomla.editors.instances && window.Joomla.editors.instances[editorId]) {
+                    window.Joomla.editors.instances[editorId].replaceSelection(tag);
+                } else {
+                    // Fallback for plain textarea
+                    const joomlaTextarea = document.getElementById(editorId);
+                    if (joomlaTextarea) {
+                        const start = joomlaTextarea.selectionStart;
+                        const end = joomlaTextarea.selectionEnd;
+                        const text = joomlaTextarea.value;
+                        joomlaTextarea.value = text.slice(0, start) + tag + text.slice(end);
+                        joomlaTextarea.selectionStart = joomlaTextarea.selectionEnd = start + tag.length;
+                        joomlaTextarea.focus();
+                        joomlaTextarea.dispatchEvent(new Event('change', { bubbles: true })); // Trigger dirty state
                     }
                 }
             });
@@ -722,6 +641,14 @@ if (!empty($this->item->contracts)) {
     formElement.addEventListener('change', function(e) {
         if (!e.target.closest('#invoicesTable')) {
             isFormDirty = true;
+        }
+    });
+
+    // 2. Capture global navigation (page reload, tab close...)
+    window.addEventListener('beforeunload', function (e) {
+        if (isFormDirty) {
+            e.preventDefault();
+            e.returnValue = ''; // Standard browser dialog
         }
     });
 

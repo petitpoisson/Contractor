@@ -11,7 +11,10 @@ Contractor - CHANGELOG
 - Added alerts for unsaved modification in client view
 - Grouped some "Save" buttons in toolbars 'Client, Contract'
 - Added inline editing for dates and references of invoices in clent view
-- mended the sort order of the invoices (most recent always at top even after inline editing)
+- Mended the sort order of the invoices (most recent always at top even after inline editing)
+- Removed Quill as the editor for communication prefs (regretfully) and reverted to default editor
+- Fixed relative paths in e-mails and e-mail preview
+- Added a test send for the expiration message
 
 1.0.1
 Bugfix, Joomla 6.1.2 compatibility
