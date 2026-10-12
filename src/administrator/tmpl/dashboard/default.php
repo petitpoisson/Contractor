@@ -265,7 +265,8 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
             .catch(err => {
                 console.error("Version check failed:", err);
                 iconEl.classList.remove('spin-anim');
-                statusEl.innerHTML = '<span class="badge bg-warning text-dark" title="<?php echo Text::_("COM_CONTRACTOR_DOWNLOAD_CHERR2"); ?>"><span class="icon-warning bg-opacity-75 fs-7 px-1 py-1" ></span><?php echo Text::_("COM_CONTRACTOR_DOWNLOAD_CHERR"); ?></span>';
+                // Fix: Moved padding/sizing classes to the main badge span and added me-1 to the icon
+                statusEl.innerHTML = '<span class="badge bg-warning text-dark bg-opacity-75 fs-7 px-1 py-1" title="<?php echo Text::_("COM_CONTRACTOR_DOWNLOAD_CHERR2"); ?>"><span class="icon-warning me-1"></span><?php echo Text::_("COM_CONTRACTOR_DOWNLOAD_CHERR"); ?></span>';
                 downloadEl.innerHTML = '';
             });
     }
