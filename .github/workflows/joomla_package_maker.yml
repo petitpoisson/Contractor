@@ -23,7 +23,7 @@ jobs:
       - name: Prepare build directory
         run: |
           mkdir build_dir
-          cp -r source/* build_dir/
+          cp -r src/* build_dir/
           
           PKG_XML="${{ env.PKG_NAME }}.xml"
           
