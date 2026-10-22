@@ -1,5 +1,10 @@
 Contractor - CHANGELOG
 
+1.0.3
+- Changed the display for Clients list (more compact)
+- Clients and contracts can now have multiple tags
+- Tags now display with correct colors for clients and contracts (and selectors and filters work better)
+
 1.0.2
 - Multiple language files corrections
 - Services list in mail to client : allowed multi-lines services and corrected vertical alignment of prices

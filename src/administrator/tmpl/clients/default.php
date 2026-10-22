@@ -21,7 +21,31 @@ HTMLHelper::_('behavior.multiselect');
 // Retrieve list order and direction for column sorting
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
+
+// Detecting active filters
+$fPub = $this->state->get('filter.published');
+$fTag = $this->state->get('filter.tag_id');
+$fCli = $this->state->get('filter.client_id');
+
+$hasActiveFilters = ($fPub !== '' && $fPub !== null) || !empty($fTag) || !empty($fCli);
 ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (<?php echo $hasActiveFilters ? 'true' : 'false'; ?>) {
+        document.body.classList.add('filters-shown');
+                const filterContainer = document.querySelector('.js-stools-container-filters');
+        if (filterContainer) {
+            filterContainer.classList.add('js-stools-container-filters-visible');
+        }
+        
+        const filterBtn = document.querySelector('.js-stools-btn-filter');
+        if (filterBtn) {
+            filterBtn.classList.remove('collapsed');
+            filterBtn.setAttribute('aria-expanded', 'true');
+        }
+    }
+});
+</script>
 <form action="<?php echo Route::_('index.php?option=com_contractor&view=clients'); ?>" method="post" name="adminForm" id="adminForm">
     
     <?php echo \Joomla\CMS\Layout\LayoutHelper::render('joomla.searchtools.default', ['view' => $this]); ?>
@@ -32,29 +56,20 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                 <th width="1%">
                     <?php echo HTMLHelper::_('grid.checkall'); ?>
                 </th>
-                <th width="5%">
+                <th width="1%">
                     <?php echo HTMLHelper::_('searchtools.sort', 'ID', 'a.id', $listDirn, $listOrder); ?>
                 </th>
                 <th width="5%" class="text-center">
                     <?php echo HTMLHelper::_('searchtools.sort', 'JSTATUS', 'a.published', $listDirn, $listOrder); ?>
                 </th>
-                <th>
+                <th width="">
                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CLIENT_PNAME', 'a.client_name', $listDirn, $listOrder); ?>
                 </th>
-                <th>
-                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CLIENT_CY', 'a.company_name', $listDirn, $listOrder); ?>
+                <th width="1%">
+                    <?php echo Text::_('COM_CONTRACTOR_CLIENT_CTRACT'); ?>
                 </th>
                 <th>
-                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CLIENT_MAIL', 'a.email', $listDirn, $listOrder); ?>
-                </th>
-                <th>
-                    <?php echo HTMLHelper::_('searchtools.sort','COM_CONTRACTOR_CLIENT_CTRACT', 'nbcontract', $listDirn, $listOrder); ?>
-                </th>
-                <th>
-                    <?php echo HTMLHelper::_('searchtools.sort','COM_CONTRACTOR_CLIENT_INVOICES', 'nbinvoices', $listDirn, $listOrder); ?>
-                </th>
-                <th>
-                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CLIENT_TAG', 't.value', $listDirn, $listOrder); ?>
+                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CLIENT_TAGS', 't.value', $listDirn, $listOrder); ?>
                 </th>
             </tr>
         </thead>
@@ -74,28 +89,34 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                         <a href="<?php echo Route::_('index.php?option=com_contractor&task=client.edit&id=' . $item->id); ?>">
                             <?php echo $this->escape($item->client_name); ?>
                         </a>
+                        <?php if (!empty($item->company_name)) : ?>
+                            <br><small class="text-muted"><?php echo $this->escape($item->company_name); ?></small>
+                        <?php endif; ?>
                     </td>
                     <td>
-                        <?php echo $this->escape($item->company_name); ?>
+                        <?php echo $this->escape($item->nbcontract) . " / " . $this->escape($item->nbinvoices); ?>
                     </td>
                     <td>
-                        <?php echo $this->escape($item->email); ?>
-                    </td>
-                    <td>
-                        <?php echo $this->escape($item->nbcontract) . " (" . $this->escape($item->nbactive) . ")"; ?>
-                    </td>
-                    <td>
-                        <?php echo $this->escape($item->nbinvoices); ?>
-                    </td>
-                    <td>
-                        <?php if (!empty($item->tag_value)) : ?>
+                        <?php if (!empty($item->tag_data)) : ?>
                             <?php 
-                            $bgColor   = !empty($item->tag_color) ? $this->escape($item->tag_color) : '#ffffff';
-                            $textColor = ContractorHelper::getContrastColor($bgColor);
+                            $tags = explode(';;;', $item->tag_data);
+                            foreach ($tags as $tagString) :
+                                $tagParts  = explode('|||', $tagString);
+                                $tagValue  = $tagParts[0] ?? '';
+                                $tagColor  = $tagParts[1] ?? '#ffffff';
+                                $textColor = ContractorHelper::getContrastColor($tagColor);
+                                
+                                if (!empty($tagValue)) :
                             ?>
-                            <div class="badge py-2 rounded" style="background-color: <?php echo $bgColor; ?>; color: <?php echo $textColor; ?>;">
-                                <?php echo $this->escape($item->tag_value); ?>
-                            </div>
+                                    <div class="badge py-2 px-3 rounded-pill mb-1" style="background-color: <?php echo $this->escape($tagColor); ?>; color: <?php echo $this->escape($textColor); ?>;">
+                                        <?php echo $this->escape($tagValue); ?>
+                                    </div>
+                            <?php 
+                                endif;
+                            endforeach; 
+                            ?>
+                        <?php else : ?>
+                            n/a
                         <?php endif; ?>
                     </td>
                 </tr>

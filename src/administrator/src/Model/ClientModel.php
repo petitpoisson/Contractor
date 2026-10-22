@@ -16,6 +16,7 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Model;
 use Joomla\CMS\MVC\Model\AdminModel;
 use Joomla\Filesystem\File;
 use Joomla\Filesystem\Folder;
+use Joomla\Utilities\ArrayHelper;
 
 class ClientModel extends AdminModel
 {
@@ -35,15 +36,35 @@ class ClientModel extends AdminModel
         if (empty($data)) {
             $data = $this->getItem();
         }
+
+        // Fetch multiple tags to populate the fancy-select field correctly
+        if (isset($data->id) && $data->id > 0) {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('tag_id'))
+                ->from($db->quoteName('#__ctr_client_tags'))
+                ->where($db->quoteName('client_id') . ' = ' . (int) $data->id);
+            $db->setQuery($query);
+            $tags = $db->loadColumn();
+            
+            // Format for the form as an array
+            $data->tag_id = !empty($tags) ? $tags : [];
+        }
+
         return $data;
     }
 
     /**
-     * Save function override to add writeLog() 
+     * Save function override to add writeLog() and save pivot tags
      */
     public function save($data)
     {
         $isNew  = empty($data['id']);
+        
+        // Temporarily extract tags to avoid core Joomla save errors on missing column
+        $tags = isset($data['tag_id']) ? $data['tag_id'] : [];
+        unset($data['tag_id']);
+
         $result = parent::save($data);
         $userId = \Joomla\CMS\Factory::getApplication()->getIdentity()->id;
 
@@ -53,12 +74,41 @@ class ClientModel extends AdminModel
             $desc   = "Joomla user ({$userId}) {$action} client {$data['client_name']} (id {$clientId})";
             
             \XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper::writeLog($clientId, 0, $desc);
+
+            // Handle pivot table tag saves
+            $db = $this->getDatabase();
+            
+            // 1. Delete old tags
+            $query = $db->getQuery(true)
+                ->delete($db->quoteName('#__ctr_client_tags'))
+                ->where($db->quoteName('client_id') . ' = ' . $clientId);
+            $db->setQuery($query)->execute();
+            
+            // 2. Insert new tags
+            if (!empty($tags)) {
+                // Ensure array format, sanitize, and remove invalid '0' IDs
+                $tags = \Joomla\Utilities\ArrayHelper::toInteger((array) $tags);
+                $tags = array_filter($tags, function($id) { return $id > 0; });
+                
+                if (!empty($tags)) {
+                    $query = $db->getQuery(true);
+                    $query->insert($db->quoteName('#__ctr_client_tags'))
+                          ->columns($db->quoteName(['client_id', 'tag_id']));
+                    
+                    foreach ($tags as $tagId) {
+                        $query->values($clientId . ', ' . $tagId);
+                    }
+                    $db->setQuery($query)->execute();
+                }
+            }
+
         } else {
             $clientId = $isNew ? 'NEW' : (int) $data['id'];
             $errorMsg = $this->getError() ?: 'unknown error';
             $clientName = $isNew ? 'NEW client' : "client {$data['client_name']}";
             \XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper::writeLog(null, 2, "Joomla user ({$userId}) tried to save {$clientName} (id {$clientId}) information but it failed: {$errorMsg}");
         }
+        
         return $result;
     }
 
@@ -76,13 +126,15 @@ class ClientModel extends AdminModel
         
         $clients = $db->setQuery($query)->loadObjectList('id');
 
+        // Note: Pivot table '#__ctr_client_tags' is handled by SQL ON DELETE CASCADE, no need to manually delete here.
+
         // Proceed with standard Joomla deletion
         $result = parent::delete($pks);
 
         if ($result) {
             foreach ($pksArray as $pk) {
-                $name = isset($clients[$pk]) ? $clients[$clients[$pk]->id]->client_name : 'Unknown';
-                $desc = "Joomla user ({$userId}) deleted client {$name} (id {$id})";
+                $name = isset($clients[$pk]) ? $clients[$pk]->client_name : 'Unknown';
+                $desc = "Joomla user ({$userId}) deleted client {$name} (id {$pk})";
                 \XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper::writeLog(null, 1, $desc);
             }
         }

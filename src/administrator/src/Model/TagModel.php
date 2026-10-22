@@ -14,6 +14,7 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\AdminModel;
+use Joomla\Utilities\ArrayHelper;
 use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
 
 class TagModel extends AdminModel
@@ -43,14 +44,36 @@ class TagModel extends AdminModel
             \XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper::writeLog(
                 null, 
                 2, 
-                "Joomla user ({$userId}) tried to save tag {$data['value']} (id {$tagId}) but it failed: {$errorMsg}"
+                "Joomla user ({$userId}) tried to save tag {$data['value']} (id {$tagIdS}) but it failed: {$errorMsg}"
             );
         }
         
         return $result;
     }
+
     public function delete(&$pks)
     {
+        if (empty($pks)) {
+            return true;
+        }
+
+        // Sécuriser les identifiants en entiers
+        $pks = ArrayHelper::toInteger($pks);
+        $db  = $this->getDatabase();
+
+        // Nettoyer les tables de liaison avant de supprimer le tag
+        $queryClientTags = $db->getQuery(true)
+            ->delete($db->quoteName('#__ctr_client_tags'))
+            ->where($db->quoteName('tag_id') . ' IN (' . implode(',', $pks) . ')');
+        $db->setQuery($queryClientTags);
+        $db->execute();
+
+        $queryContractTags = $db->getQuery(true)
+            ->delete($db->quoteName('#__ctr_contract_tags'))
+            ->where($db->quoteName('tag_id') . ' IN (' . implode(',', $pks) . ')');
+        $db->setQuery($queryContractTags);
+        $db->execute();
+
         // Only log if the deletion was actually successful
         if (parent::delete($pks)) {
             $pki = implode(",", $pks); 
@@ -63,6 +86,7 @@ class TagModel extends AdminModel
         
         return false;
     }
+
     public function getTable($type = 'Tag', $prefix = 'Administrator', $config = [])
     {
         return parent::getTable($type, $prefix, $config);

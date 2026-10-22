@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<form>
+<form addfieldprefix="XavierSpirlet\Component\Contractor\Administrator\Field">
     <fields name="filter">
         <field name="search" type="text" inputmode="search" label="JSEARCH_FILTER" hint="COM_CONTRACTOR_CONTRACT_SEARCH" />
         
@@ -9,7 +9,14 @@
             <option value="0">Inactive</option>
         </field>
 
-        <field name="tag_id" type="sql" query="SELECT id, value FROM #__ctr_tags ORDER BY value ASC" key_field="id" value_field="value" header="- Select Tag -" label="Tag" class="js-select-submit-on-change" />
+        <field name="tag_id" 
+               type="contractortag" 
+               label="Tag" 
+               hint="COM_CONTRACTOR_SELECT_TAG" 
+               multiple="true" 
+               layout="joomla.form.field.list-fancy-select" 
+               class="js-select-submit-on-change"
+        />
 
         <field name="client_id" type="sql" query="SELECT id, client_name FROM #__ctr_client ORDER BY client_name ASC" key_field="id" value_field="client_name" header="- All Clients -" label="Client" class="js-select-submit-on-change" />
 

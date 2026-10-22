@@ -7,7 +7,7 @@
     <license>GNU General Public License version 3 or later</license>
     <authorEmail>xavier@petitpoisson.be</authorEmail>
     <authorUrl>https://www.petitpoisson.be</authorUrl>
-    <version>1.0.2</version>
+    <version>1.1.0</version>
     <description>COM_CONTRACTOR_XML_DESCRIPTION</description>
 
     <namespace path="src">XavierSpirlet\Component\Contractor</namespace>

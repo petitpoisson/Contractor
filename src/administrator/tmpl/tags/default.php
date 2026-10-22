@@ -62,7 +62,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                         </a>
                     </td>
                     <td>
-                        <div class="badge w-50 py-2 rounded" style="background-color: <?php echo $bgColor; ?>; color: <?php echo $textColor; ?>;">
+                        <div class="badge w-50 py-2 rounded-pill px-3" style="background-color: <?php echo $bgColor; ?>; color: <?php echo $textColor; ?>;">
                             <?php echo $bgColor; ?>
                         </div>
                     </td>

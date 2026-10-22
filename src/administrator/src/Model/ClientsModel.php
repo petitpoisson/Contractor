@@ -14,6 +14,7 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\ListModel;
+use Joomla\Utilities\ArrayHelper;
 
 class ClientsModel extends ListModel
 {
@@ -27,7 +28,7 @@ class ClientsModel extends ListModel
                 'client_name', 'a.client_name',
                 'company_name', 'a.company_name',
                 'email', 'a.email',
-                'tag_value', 't.value', 'nbcontract', 'nbinvoices'
+                'nbcontract', 'nbinvoices'
             ];
         }
         parent::__construct($config);
@@ -48,7 +49,7 @@ class ClientsModel extends ListModel
 
         $query->select(
             $db->quoteName([
-                'a.id', 'a.published', 'a.tag_id', 'a.client_name', 'a.company_name', 'a.email', 'a.date_crea'
+                'a.id', 'a.published', 'a.client_name', 'a.company_name', 'a.email', 'a.date_crea'
             ])
         );
         
@@ -57,14 +58,19 @@ class ClientsModel extends ListModel
         $query->select('COUNT(DISTINCT CASE WHEN b.published = 1 THEN b.id END) AS nbactive');
         $query->select('COUNT(DISTINCT i.id) AS nbinvoices');
         
-        // Select tag information
-        $query->select($db->quoteName(['t.value', 't.color'], ['tag_value', 'tag_color']));
+        // Select multiple tags information using GROUP_CONCAT with proper separators for parsing
+        // We use ||| to separate value/color, and ;;; to separate tags.
+        $query->select('GROUP_CONCAT(DISTINCT CONCAT(t.value, ' . $db->quote('|||') . ', t.color) SEPARATOR ' . $db->quote(';;;') . ') AS tag_data');
+
         $query->from($db->quoteName('#__ctr_client', 'a'));
         
         $query->join('LEFT', $db->quoteName('#__ctr_contract', 'b') . ' ON ' . $db->quoteName('b.client_id') . ' = ' . $db->quoteName('a.id'));
         $query->join('LEFT', $db->quoteName('#__ctr_invoices', 'i') . ' ON ' . $db->quoteName('i.client_id') . ' = ' . $db->quoteName('a.id'));
-        // Join the tags table to get the name and color based on tag_id
-        $query->join('LEFT', $db->quoteName('#__ctr_tags', 't') . ' ON ' . $db->quoteName('t.id') . ' = ' . $db->quoteName('a.tag_id'));
+        
+        // Pivot table joins
+        $query->join('LEFT', $db->quoteName('#__ctr_client_tags', 'ct') . ' ON ' . $db->quoteName('ct.client_id') . ' = ' . $db->quoteName('a.id'));
+        $query->join('LEFT', $db->quoteName('#__ctr_tags', 't') . ' ON ' . $db->quoteName('t.id') . ' = ' . $db->quoteName('ct.tag_id'));
+        
         $query->group($db->quoteName('a.id'));
 
         // Filter by published status (active / inactive)
@@ -73,10 +79,18 @@ class ClientsModel extends ListModel
             $query->where($db->quoteName('a.published') . ' = ' . (int) $published);
         }
 
-        // Filter by tag_id
-        $tagId = $this->getState('filter.tag_id');
-        if (is_numeric($tagId)) {
-            $query->where($db->quoteName('a.tag_id') . ' = ' . (int) $tagId);
+        // Filter by tag_id (can be an array now from the filter)
+        $tagIds = $this->getState('filter.tag_id');
+        if (!empty($tagIds)) {
+            // If it's a single value from old sessions, convert to array
+            if (!is_array($tagIds)) {
+                $tagIds = [$tagIds];
+            }
+            $tagIds = ArrayHelper::toInteger($tagIds);
+            
+            // Join subquery to ensure we only get clients that possess AT LEAST ONE of the selected tags
+            // Note: Since we are in an IN clause, matching any tag works.
+            $query->where($db->quoteName('a.id') . ' IN (SELECT client_id FROM ' . $db->quoteName('#__ctr_client_tags') . ' WHERE tag_id IN (' . implode(',', $tagIds) . '))');
         }
 
         // Filter by search

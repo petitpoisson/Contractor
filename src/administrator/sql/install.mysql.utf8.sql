@@ -21,10 +21,18 @@ CREATE TABLE IF NOT EXISTS `#__ctr_client` (
   `company_name` varchar(1024) DEFAULT NULL,
   `email` varchar(255) NOT NULL DEFAULT '0',
   `phone` varchar(64) DEFAULT NULL,
-  `tag_id` int(10) UNSIGNED NULL DEFAULT NULL,
   `mailtext` text NOT NULL DEFAULT '-',
-  PRIMARY KEY (`id`),
-  CONSTRAINT `#__ctr_client_ibfk_1` FOREIGN KEY (`tag_id`) REFERENCES `#__ctr_tags` (`id`)
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for table `#__ctr_client_tags`
+CREATE TABLE IF NOT EXISTS `#__ctr_client_tags` (
+  `client_id` int(10) UNSIGNED NOT NULL,
+  `tag_id` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`client_id`, `tag_id`),
+  KEY `idx_tag_id` (`tag_id`),
+  CONSTRAINT `#__ctr_client_tags_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `#__ctr_client` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `#__ctr_client_tags_ibfk_2` FOREIGN KEY (`tag_id`) REFERENCES `#__ctr_tags` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `#__ctr_client`
@@ -37,7 +45,6 @@ CREATE TABLE IF NOT EXISTS `#__ctr_config` (
   `value` varchar(255) NOT NULL DEFAULT '0',
   PRIMARY KEY (`item`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Configuration values for Contractor';
-
 
 -- Dumping data for table `#__ctr_config`
 REPLACE INTO `#__ctr_config` (`item`, `value`) VALUES
@@ -72,12 +79,20 @@ CREATE TABLE IF NOT EXISTS `#__ctr_contract` (
   `valid_thru` date NOT NULL DEFAULT current_timestamp(),
   `rem` varchar(1024) DEFAULT NULL,
   `xrem` VARCHAR(1024) NULL DEFAULT NULL,
-  `tag_id` int(10) UNSIGNED NULL DEFAULT NULL,
   `lastmsg` date DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `client_id` (`client_id`),
-  CONSTRAINT `#__ctr_contract_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `#__ctr_client` (`id`),
-  CONSTRAINT `#__ctr_contract_ibfk_2` FOREIGN KEY (`tag_id`) REFERENCES `#__ctr_tags` (`id`)
+  CONSTRAINT `#__ctr_contract_ibfk_1` FOREIGN KEY (`client_id`) REFERENCES `#__ctr_client` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Table structure for table `#__ctr_contract_tags`
+CREATE TABLE IF NOT EXISTS `#__ctr_contract_tags` (
+  `contract_id` int(10) UNSIGNED NOT NULL,
+  `tag_id` int(10) UNSIGNED NOT NULL,
+  PRIMARY KEY (`contract_id`, `tag_id`),
+  KEY `idx_tag_id` (`tag_id`),
+  CONSTRAINT `#__ctr_contract_tags_ibfk_1` FOREIGN KEY (`contract_id`) REFERENCES `#__ctr_contract` (`id`) ON DELETE CASCADE,
+  CONSTRAINT `#__ctr_contract_tags_ibfk_2` FOREIGN KEY (`tag_id`) REFERENCES `#__ctr_tags` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table `#__ctr_contract`
@@ -123,4 +138,4 @@ CREATE TABLE IF NOT EXISTS `#__ctr_log` (
   KEY `client_id` (`client_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 INSERT INTO `#__ctr_log` (`client_id`, `level`, `description`) VALUES 
-(NULL,0,'Contractor installed')
+(NULL,0,'Contractor installed');

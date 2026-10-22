@@ -14,6 +14,7 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\ListModel;
+use Joomla\Utilities\ArrayHelper;
 
 class ContractsModel extends ListModel
 {
@@ -26,7 +27,6 @@ class ContractsModel extends ListModel
                 'name', 'a.name',
                 'client_id', 'a.client_id',
                 'valid_thru', 'a.valid_thru',
-                'tag_value', 't.value',
                 'client_name', 'c.client_name',
                 'totprice', 'totprice'
             ];
@@ -46,19 +46,25 @@ class ContractsModel extends ListModel
 
         $query->select(
             $db->quoteName([
-                'a.id', 'a.published', 'a.tag_id', 'a.client_id', 'a.name', 'a.valid_thru'
+                'a.id', 'a.published', 'a.client_id', 'a.name', 'a.valid_thru'
             ])
         );
-        $query->select($db->quoteName(['t.value', 't.color'], ['tag_value', 'tag_color']));
         $query->select('COUNT(' . $db->quoteName('l.id') . ') AS ' . $db->quoteName('nblines'));
         $query->select('SUM(' . $db->quoteName('l.price') . ') AS ' . $db->quoteName('totprice'));
         $query->select($db->quoteName('c.client_name', 'client_name'));
         
+        // Select multiple tags information using GROUP_CONCAT with proper separators for parsing
+        $query->select('GROUP_CONCAT(DISTINCT CONCAT(t.value, ' . $db->quote('|||') . ', t.color) SEPARATOR ' . $db->quote(';;;') . ') AS tag_data');
+        
         $query->from($db->quoteName('#__ctr_contract', 'a'));
         
-        $query->join('LEFT', $db->quoteName('#__ctr_tags', 't') . ' ON ' . $db->quoteName('t.id') . ' = ' . $db->quoteName('a.tag_id'));
         $query->join('LEFT', $db->quoteName('#__ctr_client', 'c') . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('a.client_id'));
         $query->join('LEFT', $db->quoteName('#__ctr_contract_line', 'l') . ' ON ' . $db->quoteName('l.contract_id') . ' = ' . $db->quoteName('a.id'));
+        
+        // Pivot table joins
+        $query->join('LEFT', $db->quoteName('#__ctr_contract_tags', 'ct') . ' ON ' . $db->quoteName('ct.contract_id') . ' = ' . $db->quoteName('a.id'));
+        $query->join('LEFT', $db->quoteName('#__ctr_tags', 't') . ' ON ' . $db->quoteName('t.id') . ' = ' . $db->quoteName('ct.tag_id'));
+        
         $query->group($db->quoteName('a.id'));
 
         // Filtres
@@ -67,16 +73,23 @@ class ContractsModel extends ListModel
             $query->where($db->quoteName('a.published') . ' = ' . (int) $published);
         }
 
-        $tagId = $this->getState('filter.tag_id');
-        if (is_numeric($tagId)) {
-            $query->where($db->quoteName('a.tag_id') . ' = ' . (int) $tagId);
+        // Filter by tag_id (can be an array now from the filter)
+        $tagIds = $this->getState('filter.tag_id');
+        if (!empty($tagIds)) {
+            // If it's a single value from old sessions, convert to array
+            if (!is_array($tagIds)) {
+                $tagIds = [$tagIds];
+            }
+            $tagIds = ArrayHelper::toInteger($tagIds);
+            
+            // Join subquery to ensure we only get contracts that possess AT LEAST ONE of the selected tags
+            $query->where($db->quoteName('a.id') . ' IN (SELECT contract_id FROM ' . $db->quoteName('#__ctr_contract_tags') . ' WHERE tag_id IN (' . implode(',', $tagIds) . '))');
         }
 
         $clientId = $this->getState('filter.client_id');
         if (is_numeric($clientId)) {
             $query->where($db->quoteName('a.client_id') . ' = ' . (int) $clientId);
         }
-
 
         $search = $this->getState('filter.search');
         if (!empty($search)) {

@@ -670,3 +670,69 @@ if (!empty($this->item->contracts)) {
     };
 
 </script>
+<?php
+// Récupération des couleurs des tags pour le JavaScript
+$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+$query = $db->getQuery(true)->select($db->quoteName(['id', 'color']))->from($db->quoteName('#__ctr_tags'));
+$db->setQuery($query);
+$tagsData = $db->loadObjectList();
+$tagColorsMap = [];
+if ($tagsData) {
+    foreach ($tagsData as $t) {
+        $tagColorsMap[$t->id] = !empty($t->color) ? $t->color : '#586a7a';
+    }
+}
+?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Dictionnaire des couleurs passé depuis PHP
+    const tagColors = <?php echo json_encode($tagColorsMap); ?>;
+    
+    function getContrastColor(hexColor) {
+        hexColor = hexColor.replace('#', '');
+        if (hexColor.length === 3) {
+            hexColor = hexColor[0] + hexColor[0] + hexColor[1] + hexColor[1] + hexColor[2] + hexColor[2];
+        }
+        const r = parseInt(hexColor.substr(0, 2), 16);
+        const g = parseInt(hexColor.substr(2, 2), 16);
+        const b = parseInt(hexColor.substr(4, 2), 16);
+        const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+        return (yiq >= 128) ? '#000000' : '#ffffff';
+    }
+
+    function applyTagColors() {
+        const wrap = document.querySelector('joomla-field-fancy-select');
+        if (!wrap) return;
+
+        // On cible UNIQUEMENT les badges sélectionnés (ignorant le menu déroulant)
+        const items = wrap.querySelectorAll('.choices__list--multiple .choices__item[data-value]');
+        
+        items.forEach(item => {
+            const val = item.getAttribute('data-value');
+            if (!val || !tagColors[val]) return;
+            
+            const bgColor = tagColors[val];
+            const textColor = getContrastColor(bgColor);
+            
+            // Application des styles
+            item.style.setProperty('background-color', bgColor, 'important');
+            item.style.setProperty('color', textColor, 'important');
+            item.style.setProperty('border', 'none', 'important');
+            
+            // Ajout des classes Bootstrap
+            item.classList.add('rounded-pill');
+            item.style.setProperty('margin-right', '4px', 'important');
+        });
+    }
+
+    const wrap = document.querySelector('joomla-field-fancy-select');
+    if (wrap) {
+        // Surveille les modifications du DOM par Choices.js
+        const observer = new MutationObserver(() => applyTagColors());
+        observer.observe(wrap, { childList: true, subtree: true });
+        
+        // Exécution initiale
+        setTimeout(applyTagColors, 100);
+    }
+});
+</script>

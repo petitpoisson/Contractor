@@ -20,13 +20,13 @@ use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
 class ContractModel extends AdminModel
 {
     /**
-     * Overwrite save() to empty lastmsg if valid_thru is modified.
+     * Overwrite save() to empty lastmsg if valid_thru is modified and handle pivot tags.
      */
     public function save($data)
     {
         $db = $this->getDatabase();
         
-        // Is this an update and not a new contract ?
+        // Is this an update and not a new contract?
         if (!empty($data['id'])) {
             // Get old valid_thru
             $query = $db->getQuery(true)
@@ -36,13 +36,52 @@ class ContractModel extends AdminModel
             $db->setQuery($query);
             $oldDate = $db->loadResult();
 
-            // If new date is différent, force reinit lastmsg
+            // If new date is different, force reinit lastmsg
             if ($oldDate && $data['valid_thru'] !== $oldDate) {
                 $data['lastmsg'] = null; 
             }
         }
 
-        return parent::save($data);
+        // Temporarily extract tags to avoid core Joomla save errors on missing column
+        $tags = isset($data['tag_id']) ? $data['tag_id'] : [];
+        unset($data['tag_id']);
+
+        // Execute the save operation ONCE
+        $result = parent::save($data);
+
+        if ($result) {
+            $contractId = (int) $this->getState($this->getName() . '.id');
+
+            // Handle pivot table tag saves
+            $db = $this->getDatabase();
+            
+            // 1. Delete old tags
+            $query = $db->getQuery(true)
+                ->delete($db->quoteName('#__ctr_contract_tags'))
+                ->where($db->quoteName('contract_id') . ' = ' . $contractId);
+            $db->setQuery($query)->execute();
+            
+            // 2. Insert new tags
+            if (!empty($tags)) {
+                // Ensure array format, sanitize, and remove invalid '0' IDs
+                $tags = \Joomla\Utilities\ArrayHelper::toInteger((array) $tags);
+                $tags = array_filter($tags, function($id) { return $id > 0; });
+                
+                if (!empty($tags)) {
+                    $query = $db->getQuery(true);
+                    $query->insert($db->quoteName('#__ctr_contract_tags'))
+                          ->columns($db->quoteName(['contract_id', 'tag_id']));
+                    
+                    foreach ($tags as $tagId) {
+                        $query->values($contractId . ', ' . $tagId);
+                    }
+                    $db->setQuery($query)->execute();
+                }
+            }
+        }
+
+        // Return the boolean result of the single save operation
+        return $result;
     }
 
     public function getForm($data = [], $loadData = true)
@@ -56,7 +95,7 @@ class ContractModel extends AdminModel
 
     protected function loadFormData()
     {
-        $app  = Factory::getApplication();
+        $app  = \Joomla\CMS\Factory::getApplication();
         
         // Check if there is data in the session (e.g., after a failed save attempt)
         $data = $app->getUserState('com_contractor.edit.contract.data', []);
@@ -69,13 +108,34 @@ class ContractModel extends AdminModel
             // If ID is 0, we are creating a new contract
             if ($data->id == 0) {
                 // Use Joomla's Date factory to respect the website's configured timezone
-                $data->date_start = Factory::getDate()->format('Y-m-d');
+                $data->date_start = \Joomla\CMS\Factory::getDate()->format('Y-m-d');
                 
                 // Pre-fill client_id if passed in the URL request
                 $reqClientId = $app->input->getInt('client_id', 0);
                 if ($reqClientId > 0) {
                     $data->client_id = $reqClientId;
                 }
+            }
+        }
+
+        // --- FETCH TAGS AFTER DATA IS LOADED ---
+        // Ensure we handle both object (from database) and array (from session) formats
+        $id = is_array($data) ? (isset($data['id']) ? $data['id'] : 0) : (isset($data->id) ? $data->id : 0);
+
+        if ($id > 0) {
+            $db    = $this->getDatabase();
+            $query = $db->getQuery(true)
+                ->select($db->quoteName('tag_id'))
+                ->from($db->quoteName('#__ctr_contract_tags'))
+                ->where($db->quoteName('contract_id') . ' = ' . (int) $id);
+            $db->setQuery($query);
+            $tags = $db->loadColumn();
+            
+            // Format for the form as an array
+            if (is_array($data)) {
+                $data['tag_id'] = !empty($tags) ? $tags : [];
+            } else {
+                $data->tag_id = !empty($tags) ? $tags : [];
             }
         }
 

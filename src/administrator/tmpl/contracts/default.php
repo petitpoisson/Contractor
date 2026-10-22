@@ -31,7 +31,30 @@ $today->setTime(0, 0, 0);
 // Retrieve list order and direction for column sorting
 $listOrder = $this->escape($this->state->get('list.ordering'));
 $listDirn  = $this->escape($this->state->get('list.direction'));
+// Detecting active filters
+$fPub = $this->state->get('filter.published');
+$fTag = $this->state->get('filter.tag_id');
+$fCli = $this->state->get('filter.client_id');
+
+$hasActiveFilters = ($fPub !== '' && $fPub !== null) || !empty($fTag) || !empty($fCli);
 ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    if (<?php echo $hasActiveFilters ? 'true' : 'false'; ?>) {
+        document.body.classList.add('filters-shown');
+                const filterContainer = document.querySelector('.js-stools-container-filters');
+        if (filterContainer) {
+            filterContainer.classList.add('js-stools-container-filters-visible');
+        }
+        
+        const filterBtn = document.querySelector('.js-stools-btn-filter');
+        if (filterBtn) {
+            filterBtn.classList.remove('collapsed');
+            filterBtn.setAttribute('aria-expanded', 'true');
+        }
+    }
+});
+</script>
 
 <style>
     .contractor-tool-btn {
@@ -56,7 +79,7 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                 <th width="1%">
                     <?php echo HTMLHelper::_('searchtools.sort', 'ID', 'a.id', $listDirn, $listOrder); ?>
                 </th>
-                <th width="5%" class="text-center">
+                <th width="1%" class="text-center">
                     <?php echo HTMLHelper::_('searchtools.sort', 'JSTATUS', 'a.published', $listDirn, $listOrder); ?>
                 </th>
                 <th>
@@ -69,13 +92,10 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                     <?php echo HTMLHelper::_('searchtools.sort', $config['currency'], 'totprice', $listDirn, $listOrder); ?>
                 </th>
                 <th width="5%">
-                    &nbsp;
-                </th>
-                <th width="12%">
                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CONTRACT_VALIDTHRU', 'a.valid_thru', $listDirn, $listOrder); ?>
                 </th>
-                <th width="12%">
-                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CLIENT_TAG', 't.value', $listDirn, $listOrder); ?>
+                <th>
+                    Tags
                 </th>
                 <th width="1%" class="text-end">
                     &nbsp;
@@ -116,14 +136,14 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                             $dateCellClass = 'bg-danger text-white';
                         }
                         // L'icône s'affiche dans tous les cas
-                        $statusIcon = '<span class="icon-exclamation-circle text-danger" style="font-size: 24px;" aria-hidden="true" title="'.Text::_('COM_CONTRACTOR_STATUS_EXPIRED').'"></span>';
+                        $statusIcon = '<span class="icon-exclamation-circle text-white pe-2" style="font-size: 24px;" aria-hidden="true" title="'.Text::_('COM_CONTRACTOR_STATUS_EXPIRED').'"></span>';
                     } elseif ($isWarning) {
                         // Fond jaune uniquement si publié
                         if (!$isUnpublished) {
                             $dateCellClass = 'bg-warning text-dark';
                         }
                         // L'icône s'affiche dans tous les cas
-                        $statusIcon = '<span class="icon-exclamation-triangle text-warning" style="font-size: 24px;" aria-hidden="true" title="'.Text::_('COM_CONTRACTOR_STATUS_EXPIRING_SOON').'"></span>';
+                        $statusIcon = '<span class="icon-exclamation-triangle text-dark pe-2" style="font-size: 24px;" aria-hidden="true" title="'.Text::_('COM_CONTRACTOR_STATUS_EXPIRING_SOON').'"></span>';
                     }
                 ?>
                 <tr class="<?php echo $rowClass; ?>">
@@ -151,33 +171,36 @@ $listDirn  = $this->escape($this->state->get('list.direction'));
                     <td class="text-end">
                         <?php printf("%0.2f",($item->totprice)/100); ?>
                     </td>
-                    <td class="text-end align-middle">
-                        <?php echo $statusIcon; ?>
-                    </td>
                     <td class="<?php echo $dateCellClass; ?> align-middle">
                         <span<?php echo $isUnpublished ? ' class="text-muted"' : ''?>>
-                        <?php echo ($item->valid_thru && $item->valid_thru != '0000-00-00 00:00:00') ? HTMLHelper::_('date', $item->valid_thru, 'Y-m-d') : '-'; ?>
+                        <?php echo $statusIcon; echo ($item->valid_thru && $item->valid_thru != '0000-00-00 00:00:00') ? HTMLHelper::_('date', $item->valid_thru, 'Y-m-d') : '-'; ?>
                         </span>
                     </td>
                     <td>
-                        <?php if (!empty($item->tag_value)) : ?>
+                        <?php if (!empty($item->tag_data)) : ?>
                             <?php 
-                            // Le tag garde toujours sa couleur d'origine, même si la ligne est dépubliée
-                            $bgColor   = !empty($item->tag_color) ? $this->escape($item->tag_color) : '#ffffff';
-                            $textColor = ContractorHelper::getContrastColor($bgColor);
+                            $tags = explode(';;;', $item->tag_data);
+                            foreach ($tags as $tagString) :
+                                $tagParts  = explode('|||', $tagString);
+                                $tagValue  = $tagParts[0] ?? '';
+                                $tagColor  = $tagParts[1] ?? '#ffffff';
+                                $textColor = ContractorHelper::getContrastColor($tagColor);
+                                
+                                if (!empty($tagValue)) :
                             ?>
-                            <div class="badge w-50 py-2 rounded" style="background-color: <?php echo $bgColor; ?>; color: <?php echo $textColor; ?>;">
-                                <?php echo $this->escape($item->tag_value); ?>
-                            </div>
+                                    <div class="badge py-2 px-3 rounded-pill mb-1 d-inline-block" style="background-color: <?php echo $this->escape($tagColor); ?>; color: <?php echo $this->escape($textColor); ?>;">
+                                        <?php echo $this->escape($tagValue); ?>
+                                    </div>
+                            <?php 
+                                endif;
+                            endforeach; 
+                            ?>
+                        <?php else : ?>
+                            n/a
                         <?php endif; ?>
                     </td>
                     <td>
                         <div class="d-flex gap-3 justify-content-end align-items-center">
-                            <?php /* 
-                            <a href="<?php echo Route::_('index.php?option=com_contractor&task=contract.options&id=' . (int) $item->id); ?>" class="contractor-tool-btn text-secondary" title="Options">
-                                <span class="icon-cog" style="font-size: 24px;" aria-hidden="true"></span>
-                            </a>
-                            */ ?>
                             <a href="<?php echo Route::_('index.php?option=com_contractor&task=contract.edit&id=' . (int) $item->id); ?>" class="contractor-tool-btn btn btn-primary" style="padding: 0.1em 1em;" title="Edit">
                                 <span class="icon-edit" aria-hidden="true"></span>
                             </a>
