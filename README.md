@@ -7,4 +7,4 @@
 Contractor is a Joomla! package including a component, a module and 2 plugins. It is a tiny CRM used to track users subscriptions to user-defined services, automate expiration tracking (and sending of e-mail reminders), and includes a frontend module so that users can see expiration dates for their services, and even see their invoices if needed. 
 
 ## Requirements note
-This component is intended for Joomla! version 5 and above (tested under 5.x and 6.x branches), which require PHP 8.1+. However, it _should_ work with Joomla 4.1+ and PHP 7.1+. Use it at your own discretion with those versions. No attempt will be made to preserve 4.1 compatibility. 
+This component is intended for Joomla! version 5 and above (tested under 5.x and 6.x branches), which require PHP 8.1+. However, it _should_ work with Joomla 4.1+ and PHP 7.1+. Use it at your own discretion with those versions. No attempt will be made to preserve 4.1 compatibility. These requirements are technical requirements for the component only. It is highly recommended that you always use the latest supported versions of PHP and Joomla! to avoid problems and security issues. 
