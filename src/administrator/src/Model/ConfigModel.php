@@ -61,7 +61,7 @@ class ConfigModel extends FormModel
     }
 
     /**
-     * Custom save method to handle row-by-row key/value configuration updates.
+     * Custom save method to handle row-by-row key/value configuration updates and inserts.
      *
      * @param   array  $data  The submitted form data.
      *
@@ -78,10 +78,26 @@ class ConfigModel extends FormModel
                 continue;
             }
 
-            $query = $db->getQuery(true)
-                        ->update($db->quoteName('#__ctr_config'))
-                        ->set($db->quoteName('value') . ' = ' . $db->quote($value))
-                        ->where($db->quoteName('item') . ' = ' . $db->quote($key));
+            // Check if the configuration key already exists
+            $queryCheck = $db->getQuery(true)
+                             ->select('COUNT(*)')
+                             ->from($db->quoteName('#__ctr_config'))
+                             ->where($db->quoteName('item') . ' = ' . $db->quote($key));
+            $db->setQuery($queryCheck);
+            $exists = $db->loadResult() > 0;
+
+            $query = $db->getQuery(true);
+            if ($exists) {
+                // UPDATE existing key
+                $query->update($db->quoteName('#__ctr_config'))
+                      ->set($db->quoteName('value') . ' = ' . $db->quote($value))
+                      ->where($db->quoteName('item') . ' = ' . $db->quote($key));
+            } else {
+                // INSERT new key
+                $query->insert($db->quoteName('#__ctr_config'))
+                      ->columns($db->quoteName(['item', 'value']))
+                      ->values($db->quote($key) . ', ' . $db->quote($value));
+            }
 
             $db->setQuery($query);
 

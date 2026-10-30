@@ -28,7 +28,8 @@ class ContractsModel extends ListModel
                 'client_id', 'a.client_id',
                 'valid_thru', 'a.valid_thru',
                 'client_name', 'c.client_name',
-                'totprice', 'totprice'
+                'totprice', 'totprice', 
+                'lastmsg','a.lastmsg'
             ];
         }
         parent::__construct($config);
@@ -46,12 +47,13 @@ class ContractsModel extends ListModel
 
         $query->select(
             $db->quoteName([
-                'a.id', 'a.published', 'a.client_id', 'a.name', 'a.valid_thru'
+                'a.id', 'a.published', 'a.client_id', 'a.name', 'a.valid_thru', 'a.lastmsg'
             ])
         );
-        $query->select('COUNT(' . $db->quoteName('l.id') . ') AS ' . $db->quoteName('nblines'));
-        $query->select('SUM(' . $db->quoteName('l.price') . ') AS ' . $db->quoteName('totprice'));
+        $query->select('IFNULL(' . $db->quoteName('l.nblines') . ', 0) AS ' . $db->quoteName('nblines'));
+        $query->select('IFNULL(' . $db->quoteName('l.totprice') . ', 0) AS ' . $db->quoteName('totprice'));
         $query->select($db->quoteName('c.client_name', 'client_name'));
+        $query->select($db->quoteName('c.company_name', 'client_company'));
         
         // Select multiple tags information using GROUP_CONCAT with proper separators for parsing
         $query->select('GROUP_CONCAT(DISTINCT CONCAT(t.value, ' . $db->quote('|||') . ', t.color) SEPARATOR ' . $db->quote(';;;') . ') AS tag_data');
@@ -59,7 +61,14 @@ class ContractsModel extends ListModel
         $query->from($db->quoteName('#__ctr_contract', 'a'));
         
         $query->join('LEFT', $db->quoteName('#__ctr_client', 'c') . ' ON ' . $db->quoteName('c.id') . ' = ' . $db->quoteName('a.client_id'));
-        $query->join('LEFT', $db->quoteName('#__ctr_contract_line', 'l') . ' ON ' . $db->quoteName('l.contract_id') . ' = ' . $db->quoteName('a.id'));
+        $subQueryLines = $db->getQuery(true)
+            ->select($db->quoteName('contract_id'))
+            ->select('COUNT(' . $db->quoteName('id') . ') AS ' . $db->quoteName('nblines'))
+            ->select('SUM(' . $db->quoteName('price') . ') AS ' . $db->quoteName('totprice'))
+            ->from($db->quoteName('#__ctr_contract_line'))
+            ->group($db->quoteName('contract_id'));
+
+        $query->join('LEFT', '(' . (string) $subQueryLines . ') AS ' . $db->quoteName('l') . ' ON ' . $db->quoteName('l.contract_id') . ' = ' . $db->quoteName('a.id'));
         
         // Pivot table joins
         $query->join('LEFT', $db->quoteName('#__ctr_contract_tags', 'ct') . ' ON ' . $db->quoteName('ct.contract_id') . ' = ' . $db->quoteName('a.id'));
@@ -67,7 +76,7 @@ class ContractsModel extends ListModel
         
         $query->group($db->quoteName('a.id'));
 
-        // Filtres
+        // Filters
         $published = $this->getState('filter.published');
         if ($published !== null && $published !== '') {
             $query->where($db->quoteName('a.published') . ' = ' . (int) $published);

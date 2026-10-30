@@ -33,7 +33,7 @@ if (!empty($this->item->contracts)) {
     });
 }
 ?>
-<form action="<?php echo Route::_('index.php?option=com_contractor&layout=edit&id=' . $clientId); ?>" method="post" name="adminForm" id="client-form" class="form-validate" enctype="multipart/form-data">
+<form action="<?php echo Route::_('index.php?option=com_contractor&layout=edit&id=' . $clientId); ?>" method="post" name="adminForm" id="client-form" class="form-validate" enctype="multipart/form-data" data-1p-ignore="true" data-lpignore="true" data-bwignore="true">
     
     <h2><?php echo $this->escape($this->form->getValue('client_name', null, Text::_('COM_CONTRACTOR_NEW_CLIENT_TITLE'))); ?></h2>
 
@@ -168,6 +168,16 @@ if (!empty($this->item->contracts)) {
                                     <span class="small text-muted text-nowrap fw-bold" id="orUploadText"><?php echo Text::_('COM_CONTRACTOR_INVOICE_OR_UPLOAD'); ?></span>
                                     
                                     <div class="w-50 transition-width" id="newInvFileWrapper">
+                                        <?php
+                                        // --------------- Hook for other invoices types plugins
+                                        \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
+                                        $event = new \Joomla\CMS\Event\GenericEvent('onContractorRenderInvoiceInputs', [
+                                            'clientId' => $clientId,
+                                            'html'     => []
+                                        ]);
+                                        $event = \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContractorRenderInvoiceInputs', $event);
+                                        echo implode("\n", $event->getArgument('html'));
+                                        ?>
                                         <input type="file" id="newInvFile" accept="application/pdf" class="form-control form-control-sm" onchange="toggleInvoiceInputs('file')">
                                     </div>
                                 </div>
@@ -657,21 +667,72 @@ if (!empty($this->item->contracts)) {
     Joomla.submitbutton = function(task) {
         if (task === 'client.cancel' && isFormDirty) {
             if (!confirm(dirtywarn1)) {
-                return false; // Stoppe l'action
+                return false; // Stop action
             }
         }
         
-        // Anything else (or on user confirm) we deactivate the alert
         isFormDirty = false; 
         
         if (typeof originalSubmitbutton === 'function') {
+            const formElement = document.getElementById('client-form');
+            const isSaving = task.includes('save') || task.includes('apply');
+            
+            // If saving, check client-side validation BEFORE proceeding
+            if (isSaving && typeof document.formvalidator !== 'undefined') {
+                if (!document.formvalidator.isValid(formElement)) {
+                    // Validation failed: force switch to 'details' tab
+                    const detailsBtn = document.querySelector('button[aria-controls="details"]');
+                    if (detailsBtn) {
+                        detailsBtn.click();
+                        detailsBtn.blur(); // Remove focus ring
+                    }
+                    
+                    // Clean memory so we don't restore the wrong tab
+                    sessionStorage.removeItem('ctr_client_tab_restore');
+                    
+                    // Let Joomla run to show its native error message and block submission
+                    return originalSubmitbutton(task);
+                }
+            }
+
+            // Validation passed. Feature: Remember active tab ONLY on "Apply"
+            if (task === 'client.apply') {
+                // Find the currently active tab button (Joomla 6 / Bootstrap 5 standard)
+                const activeBtn = document.querySelector('button.active[aria-controls]') || document.querySelector('button[aria-selected="true"][aria-controls]');
+                if (activeBtn) {
+                    sessionStorage.setItem('ctr_client_tab_restore', activeBtn.getAttribute('aria-controls'));
+                }
+            } else {
+                // Clean memory on Save & Close, Cancel, etc.
+                sessionStorage.removeItem('ctr_client_tab_restore');
+            }
+            
             return originalSubmitbutton(task);
         }
     };
 
+    // 4. Force tab on load (combats Joomla's aggressive web component memory)
+    window.addEventListener('load', function() {
+        const tabToRestore = sessionStorage.getItem('ctr_client_tab_restore');
+        const targetTabId = tabToRestore ? tabToRestore : 'details';
+        
+        const btn = document.querySelector('button[aria-controls="' + targetTabId + '"]');
+        if (btn) {
+            setTimeout(() => {
+                btn.click();
+                btn.blur(); // Remove the browser's native blue focus ring
+            }, 100); 
+        }
+        
+        // Remove memory so a subsequent standard page load defaults to "details"
+        if (tabToRestore) {
+            sessionStorage.removeItem('ctr_client_tab_restore');
+        }
+    });
+
 </script>
 <?php
-// Récupération des couleurs des tags pour le JavaScript
+// Gather tag colors for Javascript
 $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 $query = $db->getQuery(true)->select($db->quoteName(['id', 'color']))->from($db->quoteName('#__ctr_tags'));
 $db->setQuery($query);
@@ -685,7 +746,7 @@ if ($tagsData) {
 ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Dictionnaire des couleurs passé depuis PHP
+    // Color library (from PHP)
     const tagColors = <?php echo json_encode($tagColorsMap); ?>;
     
     function getContrastColor(hexColor) {
@@ -704,7 +765,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const wrap = document.querySelector('joomla-field-fancy-select');
         if (!wrap) return;
 
-        // On cible UNIQUEMENT les badges sélectionnés (ignorant le menu déroulant)
+        // Target ONLY selected tags (ignoring local menu)
         const items = wrap.querySelectorAll('.choices__list--multiple .choices__item[data-value]');
         
         items.forEach(item => {
@@ -714,7 +775,6 @@ document.addEventListener('DOMContentLoaded', function() {
             const bgColor = tagColors[val];
             const textColor = getContrastColor(bgColor);
             
-            // Application des styles
             item.style.setProperty('background-color', bgColor, 'important');
             item.style.setProperty('color', textColor, 'important');
             item.style.setProperty('border', 'none', 'important');
@@ -727,12 +787,57 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const wrap = document.querySelector('joomla-field-fancy-select');
     if (wrap) {
-        // Surveille les modifications du DOM par Choices.js
+        // Check for DOM alterations by Choices.js
         const observer = new MutationObserver(() => applyTagColors());
         observer.observe(wrap, { childList: true, subtree: true });
         
-        // Exécution initiale
+        // Initial startup
         setTimeout(applyTagColors, 100);
+    }
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Add custom validation rule for multiple e-mails
+    if (typeof document.formvalidator !== 'undefined') {
+        document.formvalidator.setHandler('emails', function(value) {
+            if (value.trim() === '') return true; // Empty fields is generated by the required attribute
+
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emails = value.split(',');
+
+            // Check each address
+            for (let i = 0; i < emails.length; i++) {
+                if (emails[i].trim() !== '' && !regex.test(emails[i].trim())) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
+
+    const emailInput = document.getElementById('jform_email');
+    
+    if (emailInput) {
+        // Replace native validation with our custom rule for multiple e-mails
+        emailInput.classList.remove('validate-email');
+        emailInput.classList.add('validate-emails');
+        
+        // Format and enforce visual validation upon field exit
+        emailInput.addEventListener('blur', function() {
+            let cleaned = this.value.replace(/;/g, ',');
+            
+            cleaned = cleaned.split(',')
+                             .map(e => e.trim())
+                             .filter(e => e.length > 0)
+                             .join(',');
+            
+            this.value = cleaned;
+
+            // Tells Joomla to re-check the field if border red or green
+            if (typeof document.formvalidator !== 'undefined') {
+                document.formvalidator.validate(this);
+            }
+        });
     }
 });
 </script>

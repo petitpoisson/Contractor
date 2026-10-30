@@ -56,7 +56,12 @@ $config   = ContractorHelper::getConfig();
 
                 <div class="col-md-6">
                     <?php echo $this->form->renderField('date_start'); ?>
-                    <?php echo $this->form->renderField('valid_thru'); ?>
+                    
+                    <?php 
+                        // We render the valid_thru field, the JS below will append the button
+                        echo $this->form->renderField('valid_thru'); 
+                    ?>
+                    
                     <?php echo $this->form->renderField('lastmsg'); ?>
                 </div>
             </div>
@@ -131,17 +136,40 @@ $config   = ContractorHelper::getConfig();
                     </tfoot>
                 </table>
                 
-            <?php endif; ?>
-        </div>
+            <?php 
+            endif; 
+
+            // --- HOOK : Zone de réglages additionnels des plugins ---
+            \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
+            $eventSettings = new \Joomla\CMS\Event\GenericEvent('onContractorRenderServiceSettings', [
+                'contractId' => (int) $this->item->id,
+                'html'       => []
+            ]);
+            $eventSettings = \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContractorRenderServiceSettings', $eventSettings);
+            echo implode("\n", $eventSettings->getArgument('html'));
+            ?>
+        </div>        
     </div>
 
     <input type="hidden" name="task" value="">
     <?php echo HTMLHelper::_('form.token'); ?>
 </form>
 
-<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
+<?php
+// Récupération des couleurs des tags pour le JavaScript
+$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
+$query = $db->getQuery(true)->select($db->quoteName(['id', 'color']))->from($db->quoteName('#__ctr_tags'));
+$db->setQuery($query);
+$tagsData = $db->loadObjectList();
+$tagColorsMap = [];
+if ($tagsData) {
+    foreach ($tagsData as $t) {
+        $tagColorsMap[$t->id] = !empty($t->color) ? $t->color : '#586a7a';
+    }
+}
+?>
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.js"></script>
-
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.3/dist/quill.snow.css" rel="stylesheet">
 <style>
     .ql-toolbar.ql-snow { border-top-left-radius: 0.375rem; border-top-right-radius: 0.375rem; border-color: #dee2e6; background-color: #f8f9fa; }
     .ql-container.ql-snow { border-bottom-left-radius: 0.375rem; border-bottom-right-radius: 0.375rem; border-color: #dee2e6; font-family: inherit; font-size: inherit; }
@@ -197,302 +225,110 @@ $config   = ContractorHelper::getConfig();
     .custom-spinners button:first-child {
         border-bottom: 1px solid #dee2e6;
     }
+    
+    /* Utility flex class for the date picker wrapper */
+    .date-wrapper-flex {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.5rem;
+        width: 100%;
+    }
+    /* Force the native web component to stretch and take remaining space */
+    .date-wrapper-flex > joomla-field-calendar {
+        flex: 1 1 auto;
+        min-width: 0;
+    }
 </style>
 
 <script>
-    // Text variables
-    tNoLines = "<?php echo Text::_('COM_CONTRACTOR_TNOLINES'); ?>";
-    tNoDesc = "<?php echo Text::_('COM_CONTRACTOR_TNODESC'); ?>";
+// Global Data
+const tNoLines = "<?php echo Text::_('COM_CONTRACTOR_TNOLINES'); ?>";
+const tNoDesc  = "<?php echo Text::_('COM_CONTRACTOR_TNODESC'); ?>";
+<?php if (!$isNew) : ?>
+const contractId = <?php echo (int) $this->item->id; ?>;
+const csrfToken  = "<?php echo $csrfToken; ?>";
+const baseUrl    = "<?php echo Route::_('index.php?option=com_contractor'); ?>";
+<?php endif; ?>
 
-    // Quill initialization
-    document.addEventListener('DOMContentLoaded', function() {
-        
-        // Import Quill icons and add a custom SVG for the source code button
-        const icons = Quill.import('ui/icons');
-        icons['source'] = '<svg viewBox="0 0 18 18"><polyline class="ql-even ql-stroke" points="5 7 3 9 5 11"></polyline><polyline class="ql-even ql-stroke" points="13 7 15 9 13 11"></polyline><line class="ql-even ql-stroke" x1="10" x2="8" y1="5" y2="13"></line></svg>';
+// --- GLOBAL DOMContentLoaded BLOCK ---
+document.addEventListener('DOMContentLoaded', function() {
+    
+    // ---------------------------------------------------------
+    // 1. QUILL INITIALIZATION
+    // ---------------------------------------------------------
+    const icons = Quill.import('ui/icons');
+    icons['source'] = '<svg viewBox="0 0 18 18"><polyline class="ql-even ql-stroke" points="5 7 3 9 5 11"></polyline><polyline class="ql-even ql-stroke" points="13 7 15 9 13 11"></polyline><line class="ql-even ql-stroke" x1="10" x2="8" y1="5" y2="13"></line></svg>';
 
-        const toolbarOptions = [
-            ['bold', 'italic', 'underline'],
-            [{ 'color': [] }], // Added text color selector
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['link', 'clean'],
-            ['source'] // Added custom source code button
-        ];
+    const toolbarOptions = [
+        ['bold', 'italic', 'underline'],
+        [{ 'color': [] }], 
+        [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+        ['link', 'clean'],
+        ['source'] 
+    ];
 
-        function initQuill(editorId, joomlaInputId) {
-            const joomlaTextarea = document.getElementById(joomlaInputId);
-            if (!joomlaTextarea) return;
+    function initQuill(editorId, joomlaInputId) {
+        const joomlaTextarea = document.getElementById(joomlaInputId);
+        if (!joomlaTextarea) return;
 
-            // Hide the native textarea initially so it doesn't show up twice
-            joomlaTextarea.style.display = 'none';
+        joomlaTextarea.style.display = 'none';
+        const editorDiv = document.getElementById(editorId);
+        editorDiv.innerHTML = joomlaTextarea.value;
+        let isSourceMode = false;
 
-            const editorDiv = document.getElementById(editorId);
-            // Inject existing HTML before initializing Quill
-            editorDiv.innerHTML = joomlaTextarea.value;
+        const quill = new Quill(editorDiv, {
+            theme: 'snow',
+            modules: { 
+                toolbar: {
+                    container: toolbarOptions,
+                    handlers: {
+                        'source': function() {
+                            const toolbarButton = this.container.querySelector('.ql-source');
+                            isSourceMode = !isSourceMode;
 
-            // Track source mode independently for each editor instance
-            let isSourceMode = false;
-
-            const quill = new Quill(editorDiv, {
-                theme: 'snow',
-                modules: { 
-                    toolbar: {
-                        container: toolbarOptions,
-                        handlers: {
-                            // Custom handler for the source button
-                            'source': function() {
-                                const toolbarButton = this.container.querySelector('.ql-source');
-                                isSourceMode = !isSourceMode;
-
-                                if (isSourceMode) {
-                                    // Switching to Source Mode: push Quill data to textarea and show it
-                                    let html = quill.getSemanticHTML();
-                                    
-                                    // Clean aggressive non-breaking spaces generated by Quill
-                                    html = html.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ');
-
-                                    if (html === '<p><br></p>' || html === '<p></p>') html = '';
-                                    joomlaTextarea.value = html;
-                                    
-                                    editorDiv.style.display = 'none';
-                                    joomlaTextarea.classList.add('source-mode-active');
-                                    toolbarButton.classList.add('ql-active');
-                                } else {
-                                    // Switching to WYSIWYG Mode: pull textarea data to Quill and show it
-                                    quill.clipboard.dangerouslyPasteHTML(joomlaTextarea.value);
-                                    
-                                    joomlaTextarea.classList.remove('source-mode-active');
-                                    joomlaTextarea.style.display = 'none';
-                                    editorDiv.style.display = 'block';
-                                    toolbarButton.classList.remove('ql-active');
-                                }
+                            if (isSourceMode) {
+                                let html = quill.getSemanticHTML();
+                                html = html.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ');
+                                if (html === '<p><br></p>' || html === '<p></p>') html = '';
+                                joomlaTextarea.value = html;
+                                
+                                editorDiv.style.display = 'none';
+                                joomlaTextarea.classList.add('source-mode-active');
+                                toolbarButton.classList.add('ql-active');
+                            } else {
+                                quill.clipboard.dangerouslyPasteHTML(joomlaTextarea.value);
+                                joomlaTextarea.classList.remove('source-mode-active');
+                                joomlaTextarea.style.display = 'none';
+                                editorDiv.style.display = 'block';
+                                toolbarButton.classList.remove('ql-active');
                             }
                         }
-                    } 
-                }
-            });
-
-            // Sync back to Joomla textarea
-            quill.on('text-change', function() {
-                // Only sync automatically if not in source mode
-                if (!isSourceMode) {
-                    // getSemanticHTML() ensures clean code in Quill 2.0
-                    let html = quill.getSemanticHTML();
-                    
-                    // Clean aggressive non-breaking spaces generated by Quill
-                    html = html.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ');
-
-                    if (html === '<p><br></p>' || html === '<p></p>') {
-                        html = '';
                     }
-                    joomlaTextarea.value = html;
-                }
-            });
-        }
-
-        initQuill('editor-rem', 'jform_rem');
-        initQuill('editor-xrem', 'jform_xrem');
-    });
-
-    // --- CONTRACT LINES LOGIC (AJAX) ---
-    <?php if (!$isNew) : ?>
-    const contractId = <?php echo (int) $this->item->id; ?>;
-    const csrfToken = "<?php echo $csrfToken; ?>";
-    const baseUrl = "<?php echo Route::_('index.php?option=com_contractor'); ?>";
-
-    document.addEventListener('DOMContentLoaded', function() {
-        // Initial load
-        loadLines();
-
-        // Custom Spinners Logic
-        const priceInput = document.getElementById('edit-line-price');
-        const descInput = document.getElementById('edit-line-desc'); // Added to target the description field
-        const btnPlus = document.getElementById('btn-price-plus');
-        const btnMinus = document.getElementById('btn-price-minus');
-
-        // Function to handle the Enter key press
-        const handleEnterKey = function(event) {
-            if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent standard form submission
-                saveContractLine();
+                } 
             }
-        };
+        });
 
-        // Attach the event listener to the description field
-        if (descInput) {
-            descInput.addEventListener('keydown', handleEnterKey);
-        }
-
-        if (priceInput) {
-            // Attach the event listener to the price field
-            priceInput.addEventListener('keydown', handleEnterKey);
-
-            // Force 2 decimals on blur
-            priceInput.addEventListener('blur', function() {
-                let val = parseFloat(this.value) || 0;
-                this.value = val.toFixed(2);
-            });
-
-            // Add 1.00 via plus button
-            if (btnPlus) {
-                btnPlus.addEventListener('click', function() {
-                    let val = parseFloat(priceInput.value) || 0;
-                    priceInput.value = (val + 1).toFixed(2);
-                });
-            }
-
-            // Subtract 1.00 via minus button
-            if (btnMinus) {
-                btnMinus.addEventListener('click', function() {
-                    let val = parseFloat(priceInput.value) || 0;
-                    priceInput.value = (val - 1).toFixed(2);
-                });
-            }
-        }
-    });
-
-    function loadLines(focusAfterLoad = false) {
-        fetch(`${baseUrl}&task=contract.getLines&contract_id=${contractId}&format=json`)
-            .then(response => response.json())
-            .then(json => {
-                if(json.data) {
-                    renderLines(json.data, focusAfterLoad);
-                }
-            });
-    }
-
-    function renderLines(lines, focusAfterLoad = false) {
-        const tbody = document.getElementById('lines-table-body');
-        let html = '';
-        let totalCents = 0;
-
-        if (lines.length === 0) {
-            html = '<tr><td colspan="3" class="text-center text-muted">'+tNoLines+'</td></tr>';
-        } else {
-            lines.forEach(line => {
-                // Read the INT from DB (cents)
-                const priceCents = parseInt(line.price, 10) || 0;
-                totalCents += priceCents;
-                
-                // Convert for display
-                const priceEuros = (priceCents / 100).toFixed(2);
-
-                html += `
-                    <tr>
-                        <td class="align-middle">${line.description}</td>
-                        <td class="align-middle text-end">${priceEuros}</td>
-                        <td class="text-end">
-                            <button type="button" class="btn btn-sm btn-primary" onclick="editLine(${line.id}, '${line.description.replace(/'/g, "\\'")}', ${priceEuros})" title="<?php echo Text::_("COM_CONTRACTOR_CONTRACT_EDITLINE"); ?>"><span class="icon-edit"></span></button>
-                            <button type="button" class="btn btn-sm btn-danger" onclick="deleteLine(${line.id})" title="<?php echo Text::_("COM_CONTRACTOR_CONTRACT_DELLINE"); ?>"><span class="icon-trash"></span></button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        tbody.innerHTML = html;
-        document.getElementById('total-cost-display').innerHTML = `<?php echo $config['currency']; ?> total ${(totalCents / 100).toFixed(2)}`;
-        resetLineForm(focusAfterLoad);
-    }
-
-    function editLine(id, description, priceEuros) {
-        document.getElementById('edit-line-id').value = id;
-        document.getElementById('edit-line-desc').value = description;
-        document.getElementById('edit-line-price').value = priceEuros;
-        document.getElementById('btn-save-line-text').innerText = '<?php echo Text::_("COM_CONTRACTOR_CONTRACT_LINEUPD"); ?>';
-    }
-
-    function resetLineForm(setFocus = false) {
-        document.getElementById('edit-line-id').value = '0';
-        document.getElementById('edit-line-desc').value = '';
-        document.getElementById('edit-line-price').value = '0.00';
-        document.getElementById('btn-save-line-text').innerText = '<?php echo Text::_("COM_CONTRACTOR_CONTRACT_LINEADD"); ?>';
-        // Apply focus only if the flag is true
-        if (setFocus) {
-            document.getElementById('edit-line-desc').focus();
-        }
-    }
-
-    function saveContractLine() {
-        const id = document.getElementById('edit-line-id').value;
-        const desc = document.getElementById('edit-line-desc').value.trim();
-        const priceEuros = parseFloat(document.getElementById('edit-line-price').value) || 0;
-
-        if (desc === '') {
-            alert(tNoDesc);
-            return;
-        }
-
-        // Convert Euros input back to cents for DB storage
-        const priceCents = Math.round(priceEuros * 100);
-
-        const formData = new FormData();
-        formData.append('line_id', id);
-        formData.append('contract_id', contractId);
-        formData.append('description', desc);
-        formData.append('price', priceCents);
-        formData.append(csrfToken, '1');
-
-        fetch(`${baseUrl}&task=contract.saveLine&format=json`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(json => {
-            if(json.success) {
-                loadLines(true);
-            } else {
-                alert(json.message);
+        quill.on('text-change', function() {
+            if (!isSourceMode) {
+                let html = quill.getSemanticHTML();
+                html = html.replace(/&nbsp;/g, ' ').replace(/\u00a0/g, ' ');
+                if (html === '<p><br></p>' || html === '<p></p>') html = '';
+                joomlaTextarea.value = html;
             }
         });
     }
 
-    function deleteLine(id) {
-        if (!confirm('<?php echo Text::_("COM_CONTRACTOR_CONTRACT_DELCONF"); ?>')) return;
-
-        const formData = new FormData();
-        formData.append('line_id', id);
-        formData.append(csrfToken, '1');
-
-        fetch(`${baseUrl}&task=contract.deleteLine&format=json`, {
-            method: 'POST',
-            body: formData
-        })
-        .then(response => response.json())
-        .then(json => {
-            if(json.success) {
-                loadLines();
-            } else {
-                alert(json.message);
-            }
-        });
-    }
-    <?php endif; ?>
-</script>
-
-<?php
-// Récupération des couleurs des tags pour le JavaScript
-$db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
-$query = $db->getQuery(true)->select($db->quoteName(['id', 'color']))->from($db->quoteName('#__ctr_tags'));
-$db->setQuery($query);
-$tagsData = $db->loadObjectList();
-$tagColorsMap = [];
-if ($tagsData) {
-    foreach ($tagsData as $t) {
-        $tagColorsMap[$t->id] = !empty($t->color) ? $t->color : '#586a7a';
-    }
-}
-?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Dictionnaire des couleurs passé depuis PHP
+    initQuill('editor-rem', 'jform_rem');
+    initQuill('editor-xrem', 'jform_xrem');
+    
+    // ---------------------------------------------------------
+    // 2. TAG COLORS INITIALIZATION
+    // ---------------------------------------------------------
     const tagColors = <?php echo json_encode($tagColorsMap); ?>;
     
     function getContrastColor(hexColor) {
         hexColor = hexColor.replace('#', '');
-        if (hexColor.length === 3) {
-            hexColor = hexColor[0] + hexColor[0] + hexColor[1] + hexColor[1] + hexColor[2] + hexColor[2];
-        }
+        if (hexColor.length === 3) hexColor = hexColor[0] + hexColor[0] + hexColor[1] + hexColor[1] + hexColor[2] + hexColor[2];
         const r = parseInt(hexColor.substr(0, 2), 16);
         const g = parseInt(hexColor.substr(2, 2), 16);
         const b = parseInt(hexColor.substr(4, 2), 16);
@@ -504,9 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const wrap = document.querySelector('joomla-field-fancy-select');
         if (!wrap) return;
 
-        // On cible UNIQUEMENT les badges sélectionnés (ignorant le menu déroulant)
         const items = wrap.querySelectorAll('.choices__list--multiple .choices__item[data-value]');
-        
         items.forEach(item => {
             const val = item.getAttribute('data-value');
             if (!val || !tagColors[val]) return;
@@ -514,25 +348,210 @@ document.addEventListener('DOMContentLoaded', function() {
             const bgColor = tagColors[val];
             const textColor = getContrastColor(bgColor);
             
-            // Application des styles
             item.style.setProperty('background-color', bgColor, 'important');
             item.style.setProperty('color', textColor, 'important');
             item.style.setProperty('border', 'none', 'important');
-            
-            // Ajout des classes Bootstrap
             item.classList.add('rounded-pill');
             item.style.setProperty('margin-right', '4px', 'important');
         });
     }
 
-    const wrap = document.querySelector('joomla-field-fancy-select');
-    if (wrap) {
-        // Surveille les modifications du DOM par Choices.js
+    const fancyWrap = document.querySelector('joomla-field-fancy-select');
+    if (fancyWrap) {
         const observer = new MutationObserver(() => applyTagColors());
-        observer.observe(wrap, { childList: true, subtree: true });
-        
-        // Exécution initiale
+        observer.observe(fancyWrap, { childList: true, subtree: true });
         setTimeout(applyTagColors, 100);
     }
-});
+    
+    // ---------------------------------------------------------
+    // 3. +1 YEAR BUTTON FOR VALID_THRU DATE
+    // ---------------------------------------------------------
+    const validThruInput = document.getElementById('jform_valid_thru');
+    if (validThruInput) {
+        const joomlaCalendar = validThruInput.closest('joomla-field-calendar');
+        const wrapper = joomlaCalendar ? joomlaCalendar.parentNode : validThruInput.parentNode;
+        
+        wrapper.classList.add('date-wrapper-flex');
+        
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn btn-primary text-nowrap rounded-4';
+        btn.innerHTML = '<span class="icon-calendar" aria-hidden="true"></span> <?php echo Text::_("COM_CONTRACTOR_CONTRACT_PLUSONE"); ?>';
+        
+        btn.addEventListener('click', function() {
+            if (validThruInput.value) {
+                const dateObj = new Date(validThruInput.value);
+                if (!isNaN(dateObj.getTime())) {
+                    dateObj.setFullYear(dateObj.getFullYear() + 1);
+                    validThruInput.value = dateObj.toISOString().split('T')[0];
+                    validThruInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    validThruInput.dispatchEvent(new Event('change', { bubbles: true }));
+                }
+            }
+        });
+        
+        wrapper.appendChild(btn);
+    }
+    
+    // ---------------------------------------------------------
+    // 4. CONTRACT LINES SPINNERS INITIALIZATION
+    // ---------------------------------------------------------
+    <?php if (!$isNew) : ?>
+    const priceInput = document.getElementById('edit-line-price');
+    const descInput  = document.getElementById('edit-line-desc');
+    const btnPlus    = document.getElementById('btn-price-plus');
+    const btnMinus   = document.getElementById('btn-price-minus');
+
+    const handleEnterKey = function(event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            saveContractLine();
+        }
+    };
+
+    if (descInput) descInput.addEventListener('keydown', handleEnterKey);
+
+    if (priceInput) {
+        priceInput.addEventListener('keydown', handleEnterKey);
+        priceInput.addEventListener('blur', function() {
+            let val = parseFloat(this.value) || 0;
+            this.value = val.toFixed(2);
+        });
+
+        if (btnPlus) {
+            btnPlus.addEventListener('click', function() {
+                let val = parseFloat(priceInput.value) || 0;
+                priceInput.value = (val + 1).toFixed(2);
+            });
+        }
+
+        if (btnMinus) {
+            btnMinus.addEventListener('click', function() {
+                let val = parseFloat(priceInput.value) || 0;
+                priceInput.value = (val - 1).toFixed(2);
+            });
+        }
+    }
+    
+    loadLines(); // Load lines when DOM is ready
+    <?php endif; ?>
+
+}); // END OF GLOBAL DOMContentLoaded
+
+// ---------------------------------------------------------
+// --- CONTRACT LINES LOGIC (AJAX FUNCTIONS) ---
+// ---------------------------------------------------------
+<?php if (!$isNew) : ?>
+function loadLines(focusAfterLoad = false) {
+    fetch(`${baseUrl}&task=contract.getLines&contract_id=${contractId}&format=json`)
+        .then(response => response.json())
+        .then(json => {
+            if(json.data) {
+                renderLines(json.data, focusAfterLoad);
+            }
+        });
+}
+
+function renderLines(lines, focusAfterLoad = false) {
+    const tbody = document.getElementById('lines-table-body');
+    let html = '';
+    let totalCents = 0;
+
+    if (lines.length === 0) {
+        html = '<tr><td colspan="3" class="text-center text-muted">'+tNoLines+'</td></tr>';
+    } else {
+        lines.forEach(line => {
+            const priceCents = parseInt(line.price, 10) || 0;
+            totalCents += priceCents;
+            const priceEuros = (priceCents / 100).toFixed(2);
+
+            html += `
+                <tr>
+                    <td class="align-middle">${line.description}</td>
+                    <td class="align-middle text-end">${priceEuros}</td>
+                    <td class="text-end">
+                        <button type="button" class="btn btn-sm btn-primary" onclick="editLine(${line.id}, '${line.description.replace(/'/g, "\\'")}', ${priceEuros})" title="<?php echo Text::_("COM_CONTRACTOR_CONTRACT_EDITLINE"); ?>"><span class="icon-edit"></span></button>
+                        <button type="button" class="btn btn-sm btn-danger" onclick="deleteLine(${line.id})" title="<?php echo Text::_("COM_CONTRACTOR_CONTRACT_DELLINE"); ?>"><span class="icon-trash"></span></button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    tbody.innerHTML = html;
+    document.getElementById('total-cost-display').innerHTML = `<?php echo $config['currency']; ?> total ${(totalCents / 100).toFixed(2)}`;
+    resetLineForm(focusAfterLoad);
+}
+
+function editLine(id, description, priceEuros) {
+    document.getElementById('edit-line-id').value = id;
+    document.getElementById('edit-line-desc').value = description;
+    document.getElementById('edit-line-price').value = priceEuros;
+    document.getElementById('btn-save-line-text').innerText = '<?php echo Text::_("COM_CONTRACTOR_CONTRACT_LINEUPD"); ?>';
+}
+
+function resetLineForm(setFocus = false) {
+    document.getElementById('edit-line-id').value = '0';
+    document.getElementById('edit-line-desc').value = '';
+    document.getElementById('edit-line-price').value = '0.00';
+    document.getElementById('btn-save-line-text').innerText = '<?php echo Text::_("COM_CONTRACTOR_CONTRACT_LINEADD"); ?>';
+    if (setFocus) {
+        document.getElementById('edit-line-desc').focus();
+    }
+}
+
+function saveContractLine() {
+    const id = document.getElementById('edit-line-id').value;
+    const desc = document.getElementById('edit-line-desc').value.trim();
+    const priceEuros = parseFloat(document.getElementById('edit-line-price').value) || 0;
+
+    if (desc === '') {
+        alert(tNoDesc);
+        return;
+    }
+
+    const priceCents = Math.round(priceEuros * 100);
+
+    const formData = new FormData();
+    formData.append('line_id', id);
+    formData.append('contract_id', contractId);
+    formData.append('description', desc);
+    formData.append('price', priceCents);
+    formData.append(csrfToken, '1');
+
+    fetch(`${baseUrl}&task=contract.saveLine&format=json`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(json => {
+        if(json.success) {
+            loadLines(true);
+        } else {
+            alert(json.message);
+        }
+    });
+}
+
+function deleteLine(id) {
+    if (!confirm('<?php echo Text::_("COM_CONTRACTOR_CONTRACT_DELCONF"); ?>')) return;
+
+    const formData = new FormData();
+    formData.append('line_id', id);
+    formData.append(csrfToken, '1');
+
+    fetch(`${baseUrl}&task=contract.deleteLine&format=json`, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(json => {
+        if(json.success) {
+            loadLines();
+        } else {
+            alert(json.message);
+        }
+    });
+}
+<?php endif; ?>
 </script>

@@ -4,6 +4,18 @@ Contractor - CHANGELOG
 - Changed the display for Clients list (more compact)
 - Clients and contracts can now have multiple tags
 - Tags now display with correct colors for clients and contracts (and selectors and filters work better)
+- Fixed the dates in contract view, they tended to change on saving
+- Fixed incorrect number of contract lines and contract total price in the contracts list view
+- (tried to) prevent password managers to jump in on the client edition page
+- Allowed multiple e-mails in client edition
+- Cleared form validation in client edition
+- Changed display for contracts list
+- Last reminder message date is now correctly updated upon message sending
+- Last reminder date is now displayed in contracts list
+- More language files bug squashing
+- Added "+1 year" button to contract valid_thru dater
+- Prepared hooks to allow for plugins
+
 
 1.0.2
 - Multiple language files corrections

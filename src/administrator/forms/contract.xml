@@ -14,8 +14,8 @@
             <option value="1">JPUBLISHED</option>
             <option value="0">JUNPUBLISHED</option>
         </field>
-        <field name="date_start" type="calendar" label="COM_CONTRACTOR_CONTRACT_STARTDATE" format="%Y-%m-%d" filter="user_utc" required="true" />
-        <field name="valid_thru" type="calendar" label="COM_CONTRACTOR_CONTRACT_VALIDTHRU" format="%Y-%m-%d" filter="user_utc" required="true" />
+        <field name="date_start" type="calendar" label="COM_CONTRACTOR_CONTRACT_STARTDATE" format="%Y-%m-%d" filter="safehtml" required="true" />
+        <field name="valid_thru" type="calendar" label="COM_CONTRACTOR_CONTRACT_VALIDTHRU" format="%Y-%m-%d" filter="safehtml" required="true" />
         <field name="lastmsg" type="calendar" label="COM_CONTRACTOR_CONTRACT_LASTMSG" format="%Y-%m-%d" disabled="disabled" />
     </fieldset>
 </form>

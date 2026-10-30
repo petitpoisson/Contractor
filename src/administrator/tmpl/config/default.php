@@ -30,31 +30,40 @@ $csrfToken = Session::getFormToken();
 
     <?php echo HTMLHelper::_('uitab.startTabSet', 'configTabs', ['active' => 'general', 'recall' => false, 'breakpoint' => 768]); ?>
 
-    <?php echo HTMLHelper::_('uitab.addTab', 'configTabs', 'general', Text::_('COM_CONTRACTOR_CONFIGURATION_GEN')); ?>
-        <fieldset class="options-form mt-3">
-            <legend class="visually-hidden"><?php echo Text::_('COM_CONTRACTOR_CONFIGURATION_GEND'); ?></legend>
-            <?php echo $this->form->renderFieldset('general'); ?>
-        <div class="d-flex flex-row-reverse">
-            <button type="button" class="btn btn-warning" id="btn-reset-delays">
-                        <span class="icon-loop" id="icon-reset-delays"></span> <?php echo Text::_('COM_CONTRACTOR_RESET_DELAYS_BTN'); ?>
-            </button>
-        </div>
-        </fieldset>
-    <?php echo HTMLHelper::_('uitab.endTab'); ?>
+    <?php 
+    // Tableau de correspondance pour vos onglets natifs (puisqu'ils n'ont pas de label dans le config.xml)
+    $coreLabels = [
+        'general'   => 'COM_CONTRACTOR_CONFIGURATION_GEN',
+        'messaging' => 'COM_CONTRACTOR_CONFIGURATION_MSG',
+        'frontend'  => 'COM_CONTRACTOR_CONFIGURATION_FRE'
+    ];
 
-    <?php echo HTMLHelper::_('uitab.addTab', 'configTabs', 'messaging', Text::_('COM_CONTRACTOR_CONFIGURATION_MSG')); ?>
-        <fieldset class="options-form mt-3">
-            <legend class="visually-hidden"><?php echo Text::_('COM_CONTRACTOR_CONFIGURATION_MSGD'); ?></legend>
-            <?php echo $this->form->renderFieldset('messaging'); ?>
-        </fieldset>
-    <?php echo HTMLHelper::_('uitab.endTab'); ?>
-
-    <?php echo HTMLHelper::_('uitab.addTab', 'configTabs', 'frontend', Text::_('COM_CONTRACTOR_CONFIGURATION_FRE')); ?>
-        <fieldset class="options-form mt-3">
-            <legend class="visually-hidden"><?php echo Text::_('COM_CONTRACTOR_CONFIGURATION_FRED'); ?></legend>
-            <?php echo $this->form->renderFieldset('frontend'); ?>
-        </fieldset>
-    <?php echo HTMLHelper::_('uitab.endTab'); ?>
+    // Boucle dynamique sur TOUS les fieldsets (natifs + ceux injectés par les plugins)
+    foreach ($this->form->getFieldsets() as $fieldset) : 
+        $name = $fieldset->name;
+        
+        // On récupère le label depuis notre tableau, sinon depuis le XML (pour les plugins), sinon le nom brut
+        $labelKey = $coreLabels[$name] ?? ($fieldset->label ?? $name);
+        $tabLabel = Text::_($labelKey);
+    ?>
+        <?php echo HTMLHelper::_('uitab.addTab', 'configTabs', $name, $tabLabel); ?>
+            <fieldset class="options-form mt-3">
+                <legend class="visually-hidden"><?php echo $tabLabel; ?></legend>
+                
+                <?php echo $this->form->renderFieldset($name); ?>
+                
+                <?php /* On réinjecte le bouton de réinitialisation UNIQUEMENT à la fin de l'onglet "general" */ ?>
+                <?php if ($name === 'general') : ?>
+                    <div class="d-flex flex-row-reverse mt-3">
+                        <button type="button" class="btn btn-warning" id="btn-reset-delays">
+                            <span class="icon-loop" id="icon-reset-delays"></span> <?php echo Text::_('COM_CONTRACTOR_RESET_DELAYS_BTN'); ?>
+                        </button>
+                    </div>
+                <?php endif; ?>
+                
+            </fieldset>
+        <?php echo HTMLHelper::_('uitab.endTab'); ?>
+    <?php endforeach; ?>
 
     <?php echo HTMLHelper::_('uitab.endTabSet'); ?>
 
@@ -65,11 +74,9 @@ $csrfToken = Session::getFormToken();
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // 1. Inject the Test Button dynamically into the SMTP Password control group
-        // This ensures it inherits the Joomla 'showon' display logic perfectly!
         const passwordField = document.getElementById('jform_smtp_password');
         
         if (passwordField) {
-            // Find the closest wrapper that Joomla toggles (usually div.control-group or similar)
             const wrapper = passwordField.closest('.control-group') || passwordField.parentNode;
             const btnContainer = document.createElement('div');
             btnContainer.className = 'mt-3 d-flex align-items-center gap-2';
@@ -88,13 +95,11 @@ $csrfToken = Session::getFormToken();
             const iconTest = document.getElementById('icon-test-smtp');
 
             btnTest.addEventListener('click', function() {
-                // UI update: Loading state
                 iconTest.classList.add('spin-anim');
                 btnTest.disabled = true;
                 resultSpan.textContent = '<?php echo Text::_("COM_CONTRACTOR_SMTP_TESTING"); ?>';
                 resultSpan.className = 'fw-bold small text-muted';
 
-                // Gather current form data
                 const formData = new FormData();
                 formData.append('host', document.getElementById('jform_smtp_host').value);
                 formData.append('port', document.getElementById('jform_smtp_port').value);
@@ -106,17 +111,15 @@ $csrfToken = Session::getFormToken();
 
                 const baseUrl = '<?php echo Route::_('index.php?option=com_contractor'); ?>';
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 seconds timeout
+                const timeoutId = setTimeout(() => controller.abort(), 15000);
 
                 fetch(`${baseUrl}&task=config.testSmtp&format=json`, {
                     method: 'POST',
                     body: formData,
-                    signal: controller.signal // Bind the abort signal to the fetch request
+                    signal: controller.signal
                 })
                 .then(async response => {
-                    clearTimeout(timeoutId); // Request succeeded, clear the timeout
-                    
-                    // Intercept non-JSON errors (e.g., 500 Internal Server Error or HTML output)
+                    clearTimeout(timeoutId);
                     if (!response.ok) {
                         const errorText = await response.text();
                         throw new Error(`HTTP ${response.status}: ${errorText.substring(0, 100)}...`);
@@ -136,23 +139,20 @@ $csrfToken = Session::getFormToken();
                     }
                 })
                 .catch(err => {
-                    clearTimeout(timeoutId); // Clear timeout just in case it was a different error
+                    clearTimeout(timeoutId);
                     iconTest.classList.remove('spin-anim');
                     btnTest.disabled = false;
                     
-                    // Distinguish between our forced timeout and general network errors
                     if (err.name === 'AbortError') {
-                        console.error("SMTP Test Error: Client-side timeout reached.");
                         resultSpan.textContent = '<?php echo Text::_("COM_CONTRACTOR_SMTP_TEST_TIMEOUT"); ?>';
                     } else {
-                        console.error("SMTP Test Error:", err);
                         resultSpan.textContent = 'Network or Server Error (Check Console)';
                     }
-                    
                     resultSpan.className = 'fw-bold small text-danger';
                 });
             });
         }
+
         // --- 2. Reset Warning Delays Logic ---
         const btnReset = document.getElementById('btn-reset-delays');
         if (btnReset) {
@@ -188,7 +188,6 @@ $csrfToken = Session::getFormToken();
 </script>
 
 <style>
-/* Helper animation for the spinning icon */
 @keyframes joomla-spin {
     100% { transform: rotate(360deg); }
 }

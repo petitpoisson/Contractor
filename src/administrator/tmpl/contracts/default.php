@@ -85,14 +85,14 @@ document.addEventListener('DOMContentLoaded', function() {
                 <th>
                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CONTRACT_NAMELI', 'a.name', $listDirn, $listOrder); ?>
                 </th>
-                <th>
-                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CONTRACT_CLIENT', 'a.client_id', $listDirn, $listOrder); ?>
-                </th>
                 <th width="1%" class="text-end">
                     <?php echo HTMLHelper::_('searchtools.sort', $config['currency'], 'totprice', $listDirn, $listOrder); ?>
                 </th>
                 <th width="5%">
                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CONTRACT_VALIDTHRU', 'a.valid_thru', $listDirn, $listOrder); ?>
+                </th>
+                <th width="5%">
+                    <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CONTRACT_LASTMSG2', 'a.lastmsg', $listDirn, $listOrder); ?>
                 </th>
                 <th>
                     Tags
@@ -160,20 +160,21 @@ document.addEventListener('DOMContentLoaded', function() {
                         <a href="<?php echo Route::_('index.php?option=com_contractor&task=contract.edit&id=' . (int) $item->id); ?>" class="text-decoration-none <?php echo $isUnpublished ? 'text-muted' : ''; ?>">
                             <?php echo $this->escape($item->name)." <small>[".$item->nblines."]</small>"; ?>
                         </a>
-                    </td>
-                    <td>
                         <?php if ($item->client_id) : ?>
-                            <a href="<?php echo Route::_('index.php?option=com_contractor&task=client.edit&id=' . (int) $item->client_id); ?>" class="text-decoration-none <?php echo $isUnpublished ? 'text-muted' : ''; ?>">
-                                <?php echo $this->escape($item->client_name)." <small>(ID ". $this->escape($item->client_id) .")</small>"; ?>
-                            </a>
+                            <br><small class="text-muted"><?php echo $this->escape($item->client_name). " (".$this->escape($item->client_company).")"; ?></small>
                         <?php endif; ?>
                     </td>
                     <td class="text-end">
                         <?php printf("%0.2f",($item->totprice)/100); ?>
                     </td>
-                    <td class="<?php echo $dateCellClass; ?> align-middle">
+                    <td class="<?php echo $dateCellClass; ?>">
                         <span<?php echo $isUnpublished ? ' class="text-muted"' : ''?>>
                         <?php echo $statusIcon; echo ($item->valid_thru && $item->valid_thru != '0000-00-00 00:00:00') ? HTMLHelper::_('date', $item->valid_thru, 'Y-m-d') : '-'; ?>
+                        </span>
+                    </td>
+                    <td class="">
+                        <span<?php echo $isUnpublished ? ' class="text-muted"' : ''?>>
+                        <?php echo ($item->lastmsg && $item->lastmsg != '0000-00-00 00:00:00') ? HTMLHelper::_('date', $item->lastmsg, 'Y-m-d') : '-'; ?>
                         </span>
                     </td>
                     <td>

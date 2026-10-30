@@ -50,6 +50,7 @@
         <field name="mailfrom" type="text" label="COM_CONTRACTOR_MAILFROM" default="info@test.com" validate="email" required="true" />
         <field name="mailfromname" type="text" label="COM_CONTRACTOR_MAILFROMNN" default="" />
         <field name="mailreply" type="text" label="COM_CONTRACTOR_MAILREPL" default="" validate="email" />
+        <field name="test_email" type="email" label="COM_CONTRACTOR_TEST_EMAIL" description="COM_CONTRACTOR_TEST_EMAIL_DESC" default="" />
         <field name="mailsubject" type="text" label="COM_CONTRACTOR_MAILSUBJ" default="COM_CONTRACTOR_MAILSUBJDEF" required="true" translate_default="true" />
         <field name="mailengine" type="list" label="COM_CONTRACTOR_MAILSENDW" default="0">
             <option value="0">COM_CONTRACTOR_MAILOPTION_JOOMLA</option>

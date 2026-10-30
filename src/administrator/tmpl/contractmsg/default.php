@@ -170,8 +170,10 @@ $engineName = $engineMap[$engineType] ?? $engineMap[0];
     const tagReplacements = <?php echo json_encode($this->data->replacements); ?>;
 
     function sendTestEmail() {
-        // Default to site default e-mail
-        const defaultTestEmail = "<?php echo $this->escape(Factory::getApplication()->get('mailfrom')); ?>";
+        // Fallback: Custom test email from config, OR site default mailfrom
+        const customTestEmail = "<?php echo $this->escape($config['test_email'] ?? ''); ?>";
+        const siteDefaultEmail = "<?php echo $this->escape(Factory::getApplication()->get('mailfrom')); ?>";
+        const defaultTestEmail = customTestEmail !== '' ? customTestEmail : siteDefaultEmail;
         const testEmail = prompt("<?php echo Text::_('COM_CONTRACTOR_MSG_TESTADR'); ?>", defaultTestEmail);
         if (testEmail) {
             if (!testEmail.includes('@')) {

@@ -137,7 +137,12 @@ class ContractmsgController extends BaseController
             }
 
             $mailer->setSender([$mailFrom, $mailFromname]);
-            $mailer->addRecipient($mailTo);
+            $recipients = array_filter(array_map('trim', explode(',', $mailTo)));
+            foreach ($recipients as $recipient) {
+                if (!empty($recipient)) {
+                    $mailer->addRecipient($recipient);
+                }
+            }
             
             if (!empty($mailReply)) {
                 $mailer->addReplyTo($mailReply);
@@ -167,22 +172,28 @@ class ContractmsgController extends BaseController
             }
 
             if ($isTest) {
-                // Message d'alerte spécifique pour le test (sans l'enregistrer dans les logs du client)
                 $app->enqueueMessage("Message de test envoyé avec succès à {$mailTo}.", 'success');
             } else {
                 $logMsg = Text::sprintf('COM_CONTRACTOR_LOG_MSG_SENT', $mailTo);
                 ContractorHelper::writeLog($clientId, 0, $logMsg);
+                // update lastmsg for contract
+                $queryUpdate = $db->getQuery(true)
+                    ->update($db->quoteName('#__ctr_contract'))
+                    ->set($db->quoteName('lastmsg') . ' = ' . $db->quote(Factory::getDate()->toSql()))
+                    ->where($db->quoteName('id') . ' = ' . (int) $id);
+                $db->setQuery($queryUpdate)->execute();
                 $app->enqueueMessage(Text::_('COM_CONTRACTOR_MSG_SENT_SUCCESS'), 'success');
             }
 
         } catch (\Exception $e) {
             $errorMsg = $e->getMessage();
             $app->enqueueMessage(Text::sprintf('COM_CONTRACTOR_MSG_SEND_EXCEPTION', $errorMsg), 'error');
-            
             if (!$isTest) {
                 $logMsg = Text::sprintf('COM_CONTRACTOR_LOG_MSG_FAILED', $mailTo, $errorMsg);
                 ContractorHelper::writeLog($clientId, 2, $logMsg);
             }
+            // Force stay on message page if error
+            $url = 'index.php?option=com_contractor&view=contractmsg&id=' . $id . '&return=' . $returnCtx;
         }
 
         $this->setRedirect(Route::_($url, false));
