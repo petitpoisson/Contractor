@@ -356,12 +356,12 @@ if (!empty($this->item->contracts)) {
         tr.id = 'invoice_row_' + inv.id;
         
         let displayLink = '-';
-        if (inv.pdf_link) {
-            if (inv.pdf_link.startsWith('images/')) {
-                const filename = inv.pdf_link.split('/').pop();
-                displayLink = `<a href="${rootUrl}${inv.pdf_link}" target="_blank" class="btn btn-sm btn-outline-secondary"><span class="icon-file-pdf text-danger"></span> ${escapeHtml(filename)}</a>`;
+        if (inv.invdata) {
+            if (inv.invdata.startsWith('images/')) {
+                const filename = inv.invdata.split('/').pop();
+                displayLink = `<a href="${rootUrl}${inv.invdata}" target="_blank" class="btn btn-sm btn-outline-secondary"><span class="icon-file-pdf text-danger"></span> ${escapeHtml(filename)}</a>`;
             } else {
-                displayLink = `<a href="${escapeHtml(inv.pdf_link)}" target="_blank" class="btn btn-sm btn-outline-secondary"><span class="icon-link"></span> ${txtOpenLink}</a>`;
+                displayLink = `<a href="${escapeHtml(inv.invdata)}" target="_blank" class="btn btn-sm btn-outline-secondary"><span class="icon-link"></span> ${txtOpenLink}</a>`;
             }
         }
 
@@ -422,7 +422,7 @@ if (!empty($this->item->contracts)) {
         formData.append('client_id', clientId);
         formData.append('invoicedate', dateInput);
         formData.append('reference', refInput.value);
-        formData.append('pdf_link', linkInput);
+        formData.append('invdata', linkInput);
         
         const tokenStr = Joomla.getOptions('csrf.token');
         if(tokenStr) formData.append(tokenStr, '1');

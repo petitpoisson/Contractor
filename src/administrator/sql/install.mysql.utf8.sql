@@ -120,7 +120,7 @@ CREATE TABLE IF NOT EXISTS `#__ctr_invoices` (
   `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT,
   `invoicedate` date NOT NULL DEFAULT current_timestamp(),
   `reference` varchar(255) NOT NULL DEFAULT '0',
-  `pdf_link` varchar(255) NOT NULL DEFAULT '0',
+  `invdata` varchar(255) NOT NULL DEFAULT '0',
   `client_id` int(10) UNSIGNED NOT NULL DEFAULT 0,
   PRIMARY KEY (`id`),
   KEY `client_id` (`client_id`),

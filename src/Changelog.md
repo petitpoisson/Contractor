@@ -1,7 +1,10 @@
 Contractor - CHANGELOG
 
-1.0.3
+1.1.0
 - Changed the display for Clients list (more compact)
+- Fixed the fact that 2 clients could be linked to the same Joomla user ID
+- Now when a Joomla user is deleted, the client is updated upon next save and not linked to that account anymore
+- Fixed the fact that it was impossible to select "No user" as linked joomla user for a client
 - Clients and contracts can now have multiple tags
 - Tags now display with correct colors for clients and contracts (and selectors and filters work better)
 - Fixed the dates in contract view, they tended to change on saving
@@ -13,7 +16,7 @@ Contractor - CHANGELOG
 - Last reminder message date is now correctly updated upon message sending
 - Last reminder date is now displayed in contracts list
 - More language files bug squashing
-- Added "+1 year" button to contract valid_thru dater
+- Added "+1 year" button to contract valid_thru date
 - Prepared hooks to allow for plugins
 
 

@@ -55,11 +55,14 @@ class ClientModel extends AdminModel
     }
 
     /**
-     * Save function override to add writeLog() and save pivot tags
+     * Save function override to add writeLog(), save pivot tags, and force joomla_user_id update
      */
     public function save($data)
     {
-        $isNew  = empty($data['id']);
+        $isNew = empty($data['id']);
+        
+        // Capture the user ID definitively (convert empty string to 0)
+        $joomlaUserId = empty($data['joomla_user_id']) ? 0 : (int) $data['joomla_user_id'];
         
         // Temporarily extract tags to avoid core Joomla save errors on missing column
         $tags = isset($data['tag_id']) ? $data['tag_id'] : [];
@@ -70,14 +73,23 @@ class ClientModel extends AdminModel
 
         if ($result) {
             $clientId = (int) $this->getState($this->getName() . '.id');
+            
+            // --- BULLETPROOF FIX ---
+            // Force the joomla_user_id update directly in the database to bypass Joomla Table class ignoring empty strings
+            $db = $this->getDatabase();
+            $queryUser = $db->getQuery(true)
+                ->update($db->quoteName('#__ctr_client'))
+                ->set($db->quoteName('joomla_user_id') . ' = ' . $joomlaUserId)
+                ->where($db->quoteName('id') . ' = ' . $clientId);
+            $db->setQuery($queryUser)->execute();
+            // -----------------------
+
             $action = $isNew ? "created" : "updated";
             $desc   = "Joomla user ({$userId}) {$action} client {$data['client_name']} (id {$clientId})";
             
             \XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper::writeLog($clientId, 0, $desc);
 
             // Handle pivot table tag saves
-            $db = $this->getDatabase();
-            
             // 1. Delete old tags
             $query = $db->getQuery(true)
                 ->delete($db->quoteName('#__ctr_client_tags'))
@@ -86,7 +98,6 @@ class ClientModel extends AdminModel
             
             // 2. Insert new tags
             if (!empty($tags)) {
-                // Ensure array format, sanitize, and remove invalid '0' IDs
                 $tags = \Joomla\Utilities\ArrayHelper::toInteger((array) $tags);
                 $tags = array_filter($tags, function($id) { return $id > 0; });
                 
@@ -226,7 +237,7 @@ class ClientModel extends AdminModel
         $obj->client_id   = $clientId;
         $obj->invoicedate = $date ?: date('Y-m-d');
         $obj->reference   = $ref;
-        $obj->pdf_link    = $pdfLink;
+        $obj->invdata    = $pdfLink;
 
         // --- HOOK : Modify invoice just before saving ---
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
@@ -265,13 +276,13 @@ class ClientModel extends AdminModel
         }
 
         $query  = $db->getQuery(true)
-                     ->select(['client_id', 'reference', 'pdf_link'])
+                     ->select(['client_id', 'reference', 'invdata'])
                      ->from('#__ctr_invoices')
                      ->where('id = ' . $id);
         $oldInv = $db->setQuery($query)->loadObject();
         
-        if ($oldInv && strpos($oldInv->pdf_link, 'images/com_contractor/invoices/') === 0) {
-            $filePath = JPATH_ROOT . '/' . ltrim($oldInv->pdf_link, '/');
+        if ($oldInv && strpos($oldInv->invdata, 'images/com_contractor/invoices/') === 0) {
+            $filePath = JPATH_ROOT . '/' . ltrim($oldInv->invdata, '/');
             if (File::exists($filePath)) {
                 File::delete($filePath);
             }
@@ -322,5 +333,64 @@ class ClientModel extends AdminModel
         }
 
         return true;
+    }
+    /**
+     * Surcharging validation to check for deleted users and prevent linking to an already used Joomla user ID
+     */
+    public function validate($form, $data, $group = null)
+    {
+        // 1. Native validation
+        $validData = parent::validate($form, $data, $group);
+        if ($validData === false) {
+            return false;
+        }
+
+        $joomlaUserId = empty($validData['joomla_user_id']) ? 0 : (int) $validData['joomla_user_id'];
+        $clientId     = (int) ($validData['id'] ?? 0);
+        $app          = \Joomla\CMS\Factory::getApplication();
+        $db           = $this->getDatabase();
+
+        if ($joomlaUserId > 0) {
+            // 2. Check if Joomla user still exists in the core database
+            $queryUser = $db->getQuery(true)
+                ->select('COUNT(*)')
+                ->from($db->quoteName('#__users'))
+                ->where($db->quoteName('id') . ' = :userId')
+                ->bind(':userId', $joomlaUserId, \Joomla\Database\ParameterType::INTEGER);
+            
+            $db->setQuery($queryUser);
+            $userExists = $db->loadResult() > 0;
+
+            if (!$userExists) {
+                // User doesn't exist anymore: alert the user and explicitly reset the value in the array
+                // SO THAT the save() method receives '0' instead of the ghost ID.
+                $validData['joomla_user_id'] = 0;
+                $joomlaUserId = 0; 
+                
+                $app->enqueueMessage(\Joomla\CMS\Language\Text::_('COM_CONTRACTOR_WARN_USER_DELETED_RESET'), 'warning');
+            }
+        }
+
+        // 3. Check if joomla_user_id is already linked to another client
+        if ($joomlaUserId > 0) {
+            $queryConflict = $db->getQuery(true)
+                ->select($db->quoteName('client_name'))
+                ->from($db->quoteName('#__ctr_client'))
+                ->where($db->quoteName('joomla_user_id') . ' = :userId')
+                ->where($db->quoteName('id') . ' != :clientId')
+                ->bind(':userId', $joomlaUserId, \Joomla\Database\ParameterType::INTEGER)
+                ->bind(':clientId', $clientId, \Joomla\Database\ParameterType::INTEGER);
+
+            $db->setQuery($queryConflict);
+            $conflictName = $db->loadResult();
+
+            if ($conflictName) {
+                // Account already in use: abort save
+                $this->setError(\Joomla\CMS\Language\Text::sprintf('COM_CONTRACTOR_ERR_USER_ALREADY_LINKED', $conflictName));
+                return false;
+            }
+        }
+
+        return $validData;
     }
 }

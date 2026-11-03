@@ -56,7 +56,7 @@ class ClientController extends FormController
             $clientId = $app->input->post->getInt('client_id', 0);
             $date     = $app->input->post->getString('invoicedate', '');
             $ref      = $app->input->post->getString('reference', '');
-            $link     = $app->input->post->getString('pdf_link', '');
+            $link     = $app->input->post->getString('invdata', '');
             $file     = $app->input->files->get('invoice_file');
 
             // Delegate logic to the Model

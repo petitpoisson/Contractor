@@ -33,3 +33,6 @@ SELECT `id`, `tag_id` FROM `#__ctr_contract` WHERE `tag_id` IS NOT NULL AND `tag
 -- Drop foreign key constraint and old column from contracts
 ALTER TABLE `#__ctr_contract` DROP FOREIGN KEY `#__ctr_contract_ibfk_2`;
 ALTER TABLE `#__ctr_contract` DROP COLUMN `tag_id`;
+
+-- Rename pdf_link field in table ctr_invoices
+ALTER TABLE `#__ctr_invoices` RENAME COLUMN `pdf_link` TO `invdata`;
