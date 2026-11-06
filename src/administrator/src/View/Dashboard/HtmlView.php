@@ -39,6 +39,7 @@ class HtmlView extends BaseHtmlView
 
         $this->stats = $model->getStats($warnDays);
         $this->logs  = $model->getLogs(20);
+        $this->plugins = $model->getActivePlugins();
 
         return parent::display($tpl);
     }

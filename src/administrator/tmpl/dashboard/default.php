@@ -25,7 +25,15 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
         <div class="col-12">
             <h1 class="display-1" style="line-height: 40px;"><span class="fas fa-file-contract"></span>&nbsp;<?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TITLE'); ?><br />
                 <span class="display-6"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_SUBTITLE'); ?></span></h1>
-            <p class="text-muted"><?php echo Text::_('COM_CONTRACTOR_VERSION'); ?> : <?php echo $this->escape($version); ?></p>
+            <p class="text-muted">
+                <?php 
+                echo Text::_('COM_CONTRACTOR_VERSION')." ".$this->escape($version); 
+                if (!empty($this->plugins)) {
+                    foreach ($this->plugins as $plugin) {
+                        echo "<br />\nPlugin : ".$this->escape($plugin->name)." - ".$this->escape($plugin->version); 
+                    }
+                } ?>
+            </p>
         </div>
     </div>
 

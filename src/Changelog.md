@@ -1,5 +1,8 @@
 Contractor - CHANGELOG
 
+1.1.1
+- Further plugin enabling (in parallel with plugins development)
+
 1.1.0
 - Changed the display for Clients list (more compact)
 - Fixed the fact that 2 clients could be linked to the same Joomla user ID

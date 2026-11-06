@@ -97,4 +97,50 @@ class DashboardModel extends BaseDatabaseModel
 
         return $db->loadObjectList() ?: [];
     }
+
+    /**
+     * Retrieves active plugins for the contractor group.
+     *
+     * @return  array  List of active plugin objects (name and version).
+     */
+    public function getActivePlugins(): array
+    {
+        $db = $this->getDatabase();
+        $query = $db->getQuery(true)
+            ->select([
+                $db->quoteName('name'),
+                $db->quoteName('element'), // Le nom du dossier du plugin (ex: contractor-cabai-invoice)
+                $db->quoteName('folder'),  // Le groupe (ex: contractor)
+                $db->quoteName('manifest_cache')
+            ])
+            ->from($db->quoteName('#__extensions'))
+            ->where($db->quoteName('type') . ' = ' . $db->quote('plugin'))
+            ->where($db->quoteName('folder') . ' = ' . $db->quote('contractor'))
+            ->where($db->quoteName('enabled') . ' = 1');
+
+        $db->setQuery($query);
+        $results = $db->loadObjectList() ?: [];
+
+        $plugins = [];
+        $lang    = \Joomla\CMS\Factory::getLanguage();
+
+        foreach ($results as $result) {
+            $extension = 'plg_' . $result->folder . '_' . $result->element;
+            $basePath = JPATH_PLUGINS . '/' . $result->folder . '/' . $result->element;
+
+            // Attemps to load .sys.ini from folder, falls back to global administrator folder incas it's installed the old way
+            $lang->load($extension, $basePath, null, false, true) 
+            || $lang->load($extension, JPATH_ADMINISTRATOR, null, false, true);
+
+            $manifest = json_decode($result->manifest_cache, true);
+            $version  = $manifest['version'] ?? 'N/A';
+            
+            $plugins[] = (object) [
+                'name'    => \Joomla\CMS\Language\Text::_($result->name),
+                'version' => $version
+            ];
+        }
+
+        return $plugins;
+    }
 }

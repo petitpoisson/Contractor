@@ -16,6 +16,8 @@ use Joomla\CMS\Router\Route;
 use Joomla\CMS\Language\Text;
 use Joomla\CMS\Factory;
 use Joomla\CMS\Uri\Uri;
+use Joomla\Event\Event;
+use Joomla\CMS\Plugin\PluginHelper;
 use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
 
 HTMLHelper::_('behavior.formvalidator');
@@ -143,12 +145,12 @@ if (!empty($this->item->contracts)) {
                             <th width="5%"><?php echo Text::_('COM_CONTRACTOR_GLOBAL_ID'); ?></th>
                             <th width="15%"><?php echo Text::_('COM_CONTRACTOR_INVOICE_DATE'); ?></th>
                             <th width="20%"><?php echo Text::_('COM_CONTRACTOR_INVOICE_REF'); ?></th>
-                            <th><?php echo Text::_('COM_CONTRACTOR_INVOICE_LINK'); ?></th>
+                            <th><?php echo Text::_('COM_CONTRACTOR_INVOICE_DATA'); ?></th>
                             <th width="10%" class="text-center"><?php echo Text::_('COM_CONTRACTOR_GLOBAL_ACTIONS'); ?></th>
                         </tr>
                     </thead>
                     <tbody id="invoicesBody">
-                        <tr class="table-info" id="invoiceAddRow">
+                        <tr class="table-info align-top" id="invoiceAddRow">
                             <td class="text-muted">-</td>
                             <td>
                                 <input type="date" id="newInvDate" class="form-control form-control-sm" value="<?php echo Factory::getDate()->format('Y-m-d'); ?>">
@@ -156,30 +158,32 @@ if (!empty($this->item->contracts)) {
                             <td>
                                 <input type="text" id="newInvRef" class="form-control form-control-sm" placeholder="<?php echo Text::_('COM_CONTRACTOR_INVOICE_REF_PH'); ?>">
                             </td>
-                            <td class="align-top">
-                                <div class="d-flex align-items-center gap-2">
-                                    <div class="input-group input-group-sm w-50 transition-width" id="newInvLinkWrapper">
+                            <td>
+                                <div class="d-flex flex-column gap-2" id="invoiceInputContainer">
+                                    <div class="input-group input-group-sm transition-height overflow-hidden" id="newInvLinkWrapper">
+                                        <span class="fw-bold pe-2 fs-4 text-dark"><?php echo Text::_('COM_CONTRACTOR_INVOICE_DATALINK'); ?></span>
                                         <input type="url" id="newInvLink" class="form-control" placeholder="https://..." oninput="toggleInvoiceInputs('link')">
                                         <button type="button" class="btn btn-outline-secondary" onclick="testPdfLink(this, 'newInvLink')">
                                             <?php echo Text::_('COM_CONTRACTOR_INVOICE_TEST_LINK'); ?>
                                         </button>
                                     </div>
-                                    
-                                    <span class="small text-muted text-nowrap fw-bold" id="orUploadText"><?php echo Text::_('COM_CONTRACTOR_INVOICE_OR_UPLOAD'); ?></span>
-                                    
-                                    <div class="w-50 transition-width" id="newInvFileWrapper">
-                                        <?php
-                                        // --------------- Hook for other invoices types plugins
-                                        \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
-                                        $event = new \Joomla\CMS\Event\GenericEvent('onContractorRenderInvoiceInputs', [
-                                            'clientId' => $clientId,
-                                            'html'     => []
-                                        ]);
-                                        $event = \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContractorRenderInvoiceInputs', $event);
-                                        echo implode("\n", $event->getArgument('html'));
-                                        ?>
-                                        <input type="file" id="newInvFile" accept="application/pdf" class="form-control form-control-sm" onchange="toggleInvoiceInputs('file')">
+                                                                        
+                                    <div class="input-group input-group-sm transition-height overflow-hidden" id="newInvFileWrapper">
+                                        <span class="fw-bold pe-2 fs-4 text-dark"><?php echo Text::_('COM_CONTRACTOR_INVOICE_DATAPDF'); ?></span>
+                                        <input type="file" id="newInvFile" accept="application/pdf" class="form-control" onchange="toggleInvoiceInputs('file')">
                                     </div>
+
+<?php
+    // HOOK : add other invoice methods
+    PluginHelper::importPlugin('contractor');
+        $event = new Event('onContractorRenderInvoiceInputs', [
+        'clientId' => $clientId,
+        'html'     => [] 
+    ]);
+    $dispatcher = Factory::getApplication()->getDispatcher();
+    $event = $dispatcher->dispatch('onContractorRenderInvoiceInputs', $event);
+    echo implode("\n", $event->getArgument('html', []));
+?>
                                 </div>
                                 <small id="newInvMimeResult" class="mime-result text-muted mt-1 d-block"></small>
                             </td>
@@ -270,10 +274,22 @@ if (!empty($this->item->contracts)) {
 </form>
 
 <style>
-    /* Animation et gestion de la largeur des champs */
-    .transition-width { transition: width 0.3s ease, flex 0.3s ease; }
-    .w-50 { width: 50% !important; }
-    .w-100 { width: 100% !important; }
+    .transition-height { 
+        transition: max-height 0.4s ease-in-out, opacity 0.3s ease-in-out, margin 0.3s ease-in-out; 
+        max-height: 50px; 
+        opacity: 1;
+    }
+    
+    .collapsed-input {
+        max-height: 0 !important;
+        opacity: 0 !important;
+        margin-top: 0 !important;
+        margin-bottom: 0 !important;
+        border: none !important;
+        padding: 0 !important;
+    }
+
+    .w-25 { width: 25% !important; justify-content: center; }
 
     .inv-editable:hover { outline: 1px dashed #ccc; background: #f8f9fa; }
     .cursor-pointer { cursor: pointer; }
@@ -282,7 +298,6 @@ if (!empty($this->item->contracts)) {
 </style>
 
 <script>
-    // --- TRANSLATION STRINGS FOR JS ---
     const txtDelWarn      = "<?php echo Text::_('COM_CONTRACTOR_INVOICE_DEL_WARN', true); ?>";
     const txtOpenLink     = "<?php echo Text::_('COM_CONTRACTOR_INVOICE_OPEN_LINK', true); ?>";
     const txtErrReqRef    = "<?php echo Text::_('COM_CONTRACTOR_INVOICE_ERR_REQ_REF', true); ?>";
@@ -308,32 +323,38 @@ if (!empty($this->item->contracts)) {
     function toggleInvoiceInputs(source) {
         const linkWrapper = document.getElementById('newInvLinkWrapper');
         const fileWrapper = document.getElementById('newInvFileWrapper');
-        const orText      = document.getElementById('orUploadText');
         const linkInput   = document.getElementById('newInvLink');
         const fileInput   = document.getElementById('newInvFile');
         
+        const pluginWrappers = document.querySelectorAll('.plugin-invoice-input');
+
         if (source === 'link') {
             if (linkInput.value.trim() !== '') {
-                fileWrapper.style.display = 'none';
-                orText.style.display = 'none';
-                linkWrapper.classList.replace('w-50', 'w-100');
+                fileWrapper.classList.add('collapsed-input');
+                pluginWrappers.forEach(el => el.classList.add('collapsed-input'));
             } else {
-                fileWrapper.style.display = 'block';
-                orText.style.display = 'inline';
-                linkWrapper.classList.replace('w-100', 'w-50');
+                fileWrapper.classList.remove('collapsed-input');
+                pluginWrappers.forEach(el => el.classList.remove('collapsed-input'));
             }
         } else if (source === 'file') {
             if (fileInput.files.length > 0) {
-                linkWrapper.style.display = 'none';
-                orText.style.display = 'none';
-                fileWrapper.classList.replace('w-50', 'w-100');
+                linkWrapper.classList.add('collapsed-input');
+                pluginWrappers.forEach(el => el.classList.add('collapsed-input'));
             } else {
-                linkWrapper.style.display = 'flex';
-                orText.style.display = 'inline';
-                fileWrapper.classList.replace('w-100', 'w-50');
+                linkWrapper.classList.remove('collapsed-input');
+                pluginWrappers.forEach(el => el.classList.remove('collapsed-input'));
             }
+        } else if (source === 'plugin') {
+            linkWrapper.classList.add('collapsed-input');
+            fileWrapper.classList.add('collapsed-input');
         }
     }
+    
+    window.resetInvoiceInputsVisibility = function() {
+        document.getElementById('newInvLinkWrapper').classList.remove('collapsed-input');
+        document.getElementById('newInvFileWrapper').classList.remove('collapsed-input');
+        document.querySelectorAll('.plugin-invoice-input').forEach(el => el.classList.remove('collapsed-input'));
+    };
 
     function resetNewInvoice() {
         document.getElementById('newInvDate').value = "<?php echo Factory::getDate()->format('Y-m-d'); ?>";
@@ -342,12 +363,7 @@ if (!empty($this->item->contracts)) {
         document.getElementById('newInvFile').value = '';
         document.getElementById('newInvMimeResult').innerHTML = '';
         
-        document.getElementById('newInvLinkWrapper').style.display = 'flex';
-        document.getElementById('newInvFileWrapper').style.display = 'flex';
-        document.getElementById('orUploadText').style.display = 'inline';
-        
-        document.getElementById('newInvLinkWrapper').classList.replace('w-100', 'w-50');
-        document.getElementById('newInvFileWrapper').classList.replace('w-100', 'w-50');
+        window.resetInvoiceInputsVisibility();
     }
 
     function appendInvoiceRowToDOM(inv) {
@@ -535,18 +551,15 @@ if (!empty($this->item->contracts)) {
             });
         });
 
-        // Joomla native editor tag insertion
         document.querySelectorAll('.tag-insert').forEach(button => {
             button.addEventListener('click', function(e) {
                 e.preventDefault(); 
                 const tag = this.getAttribute('data-tag');
-                const editorId = 'jform_mailtext'; // Assuming the field ID is jform_mailtext
+                const editorId = 'jform_mailtext'; 
                 
-                // If Joomla standard editor API is available (e.g. TinyMCE, CodeMirror)
                 if (window.Joomla && window.Joomla.editors && window.Joomla.editors.instances && window.Joomla.editors.instances[editorId]) {
                     window.Joomla.editors.instances[editorId].replaceSelection(tag);
                 } else {
-                    // Fallback for plain textarea
                     const joomlaTextarea = document.getElementById(editorId);
                     if (joomlaTextarea) {
                         const start = joomlaTextarea.selectionStart;
@@ -555,26 +568,24 @@ if (!empty($this->item->contracts)) {
                         joomlaTextarea.value = text.slice(0, start) + tag + text.slice(end);
                         joomlaTextarea.selectionStart = joomlaTextarea.selectionEnd = start + tag.length;
                         joomlaTextarea.focus();
-                        joomlaTextarea.dispatchEvent(new Event('change', { bubbles: true })); // Trigger dirty state
+                        joomlaTextarea.dispatchEvent(new Event('change', { bubbles: true })); 
                     }
                 }
             });
         });
     });
 
-    // Store original value on focus to handle 'Escape' key
     document.getElementById('invoicesBody').addEventListener('focusin', function(e) {
         if (e.target.classList.contains('inv-inline-edit')) {
             e.target.dataset.original = e.target.value;
         }
     });
 
-    // Handle Enter and Escape keys
     document.getElementById('invoicesBody').addEventListener('keydown', function(e) {
         if (e.target.classList.contains('inv-inline-edit')) {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                e.target.blur(); // Blur triggers the 'change' event below
+                e.target.blur(); 
             } else if (e.key === 'Escape') {
                 e.target.value = e.target.dataset.original;
                 e.target.blur();
@@ -582,7 +593,6 @@ if (!empty($this->item->contracts)) {
         }
     });
 
-    // Trigger save when the field loses focus or date is picked
     document.getElementById('invoicesBody').addEventListener('change', function(e) {
         const target = e.target;
         if (target.classList.contains('inv-inline-edit')) {
@@ -594,7 +604,7 @@ if (!empty($this->item->contracts)) {
             if (value.trim() !== '' && value !== original) {
                 saveInvoiceFieldAjax(id, field, value, target, original);
             } else {
-                target.value = original; // Revert if empty
+                target.value = original; 
             }
         }
     });
@@ -608,7 +618,7 @@ if (!empty($this->item->contracts)) {
         const tokenStr = Joomla.getOptions('csrf.token');
         if(tokenStr) formData.append(tokenStr, '1');
 
-        inputElement.disabled = true; // Prevent double-edits while saving
+        inputElement.disabled = true; 
 
         try {
             const response = await fetch('index.php?option=com_contractor&task=client.updateInvoiceField&format=json', {
@@ -635,14 +645,11 @@ if (!empty($this->item->contracts)) {
         }
     }
 
-    // === Unsaved edits monitoring ===
     let isFormDirty = false;
 
-    // 1. Listen on standard form fields
     const formElement = document.getElementById('client-form');
     
     formElement.addEventListener('input', function(e) {
-        // Ignore if inside invoices table
         if (!e.target.closest('#invoicesTable')) {
             isFormDirty = true;
         }
@@ -654,20 +661,18 @@ if (!empty($this->item->contracts)) {
         }
     });
 
-    // 2. Capture global navigation (page reload, tab close...)
     window.addEventListener('beforeunload', function (e) {
         if (isFormDirty) {
             e.preventDefault();
-            e.returnValue = ''; // Standard browser dialog
+            e.returnValue = '';
         }
     });
 
-    // 3. Capture Joomla! toolbar (cancel/close button)
     const originalSubmitbutton = Joomla.submitbutton;
     Joomla.submitbutton = function(task) {
         if (task === 'client.cancel' && isFormDirty) {
             if (!confirm(dirtywarn1)) {
-                return false; // Stop action
+                return false;
             }
         }
         
@@ -677,33 +682,26 @@ if (!empty($this->item->contracts)) {
             const formElement = document.getElementById('client-form');
             const isSaving = task.includes('save') || task.includes('apply');
             
-            // If saving, check client-side validation BEFORE proceeding
             if (isSaving && typeof document.formvalidator !== 'undefined') {
                 if (!document.formvalidator.isValid(formElement)) {
-                    // Validation failed: force switch to 'details' tab
                     const detailsBtn = document.querySelector('button[aria-controls="details"]');
                     if (detailsBtn) {
                         detailsBtn.click();
-                        detailsBtn.blur(); // Remove focus ring
+                        detailsBtn.blur();
                     }
                     
-                    // Clean memory so we don't restore the wrong tab
                     sessionStorage.removeItem('ctr_client_tab_restore');
                     
-                    // Let Joomla run to show its native error message and block submission
                     return originalSubmitbutton(task);
                 }
             }
 
-            // Validation passed. Feature: Remember active tab ONLY on "Apply"
             if (task === 'client.apply') {
-                // Find the currently active tab button (Joomla 6 / Bootstrap 5 standard)
                 const activeBtn = document.querySelector('button.active[aria-controls]') || document.querySelector('button[aria-selected="true"][aria-controls]');
                 if (activeBtn) {
                     sessionStorage.setItem('ctr_client_tab_restore', activeBtn.getAttribute('aria-controls'));
                 }
             } else {
-                // Clean memory on Save & Close, Cancel, etc.
                 sessionStorage.removeItem('ctr_client_tab_restore');
             }
             
@@ -711,7 +709,6 @@ if (!empty($this->item->contracts)) {
         }
     };
 
-    // 4. Force tab on load (combats Joomla's aggressive web component memory)
     window.addEventListener('load', function() {
         const tabToRestore = sessionStorage.getItem('ctr_client_tab_restore');
         const targetTabId = tabToRestore ? tabToRestore : 'details';
@@ -720,11 +717,10 @@ if (!empty($this->item->contracts)) {
         if (btn) {
             setTimeout(() => {
                 btn.click();
-                btn.blur(); // Remove the browser's native blue focus ring
+                btn.blur();
             }, 100); 
         }
         
-        // Remove memory so a subsequent standard page load defaults to "details"
         if (tabToRestore) {
             sessionStorage.removeItem('ctr_client_tab_restore');
         }
@@ -732,7 +728,6 @@ if (!empty($this->item->contracts)) {
 
 </script>
 <?php
-// Gather tag colors for Javascript
 $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 $query = $db->getQuery(true)->select($db->quoteName(['id', 'color']))->from($db->quoteName('#__ctr_tags'));
 $db->setQuery($query);
@@ -746,7 +741,6 @@ if ($tagsData) {
 ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Color library (from PHP)
     const tagColors = <?php echo json_encode($tagColorsMap); ?>;
     
     function getContrastColor(hexColor) {
@@ -765,7 +759,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const wrap = document.querySelector('joomla-field-fancy-select');
         if (!wrap) return;
 
-        // Target ONLY selected tags (ignoring local menu)
         const items = wrap.querySelectorAll('.choices__list--multiple .choices__item[data-value]');
         
         items.forEach(item => {
@@ -779,7 +772,6 @@ document.addEventListener('DOMContentLoaded', function() {
             item.style.setProperty('color', textColor, 'important');
             item.style.setProperty('border', 'none', 'important');
             
-            // Ajout des classes Bootstrap
             item.classList.add('rounded-pill');
             item.style.setProperty('margin-right', '4px', 'important');
         });
@@ -787,25 +779,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const wrap = document.querySelector('joomla-field-fancy-select');
     if (wrap) {
-        // Check for DOM alterations by Choices.js
         const observer = new MutationObserver(() => applyTagColors());
         observer.observe(wrap, { childList: true, subtree: true });
         
-        // Initial startup
         setTimeout(applyTagColors, 100);
     }
 });
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Add custom validation rule for multiple e-mails
     if (typeof document.formvalidator !== 'undefined') {
         document.formvalidator.setHandler('emails', function(value) {
-            if (value.trim() === '') return true; // Empty fields is generated by the required attribute
+            if (value.trim() === '') return true; 
 
             const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             const emails = value.split(',');
 
-            // Check each address
             for (let i = 0; i < emails.length; i++) {
                 if (emails[i].trim() !== '' && !regex.test(emails[i].trim())) {
                     return false;
@@ -818,11 +806,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const emailInput = document.getElementById('jform_email');
     
     if (emailInput) {
-        // Replace native validation with our custom rule for multiple e-mails
         emailInput.classList.remove('validate-email');
         emailInput.classList.add('validate-emails');
         
-        // Format and enforce visual validation upon field exit
         emailInput.addEventListener('blur', function() {
             let cleaned = this.value.replace(/;/g, ',');
             
@@ -833,7 +819,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             this.value = cleaned;
 
-            // Tells Joomla to re-check the field if border red or green
             if (typeof document.formvalidator !== 'undefined') {
                 document.formvalidator.validate(this);
             }

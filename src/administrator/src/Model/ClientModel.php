@@ -241,15 +241,15 @@ class ClientModel extends AdminModel
 
         // --- HOOK : Modify invoice just before saving ---
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
-        $event = new \Joomla\CMS\Event\GenericEvent('onContractorBeforeAddInvoice', [
+        $event = new \Joomla\Event\Event('onContractorBeforeAddInvoice', [
             'invoice' => $obj,
             'file'    => $file,
-            'post'    => \Joomla\CMS\Factory::getApplication()->input->post->toArray()
+            'post'    => \Joomla\CMS\Factory::getApplication()->input->post->getArray() // <-- C'est ici !
         ]);
         $event = \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContractorBeforeAddInvoice', $event);
         $obj = $event->getArgument('invoice');
         // -------------------------------------------------
-
+        
         $db->insertObject('#__ctr_invoices', $obj, 'id');
 
         // Log the action

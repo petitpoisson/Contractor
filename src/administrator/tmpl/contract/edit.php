@@ -139,9 +139,9 @@ $config   = ContractorHelper::getConfig();
             <?php 
             endif; 
 
-            // --- HOOK : Zone de réglages additionnels des plugins ---
+            // --- Hook : plugins additional settings ---
             \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
-            $eventSettings = new \Joomla\CMS\Event\GenericEvent('onContractorRenderServiceSettings', [
+            $eventSettings = new \Joomla\Event\Event('onContractorRenderServiceSettings', [
                 'contractId' => (int) $this->item->id,
                 'html'       => []
             ]);
@@ -156,7 +156,7 @@ $config   = ContractorHelper::getConfig();
 </form>
 
 <?php
-// Récupération des couleurs des tags pour le JavaScript
+// Colors (for JS)
 $db = \Joomla\CMS\Factory::getContainer()->get(\Joomla\Database\DatabaseInterface::class);
 $query = $db->getQuery(true)->select($db->quoteName(['id', 'color']))->from($db->quoteName('#__ctr_tags'));
 $db->setQuery($query);

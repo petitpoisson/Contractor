@@ -31,6 +31,8 @@ class ConfigModel extends FormModel
 
     public function getForm($data = [], $loadData = true)
     {
+        // Import plugins from group 'contractor'
+        \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
         $form = $this->loadForm('com_contractor.config', 'config', ['control' => 'jform', 'load_data' => $loadData]);
         return $form;
     }

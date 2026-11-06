@@ -174,7 +174,7 @@ class ContractModel extends AdminModel
 
         // --- HOOK : Adding virtual lines (ex:  Mailgun) ---
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
-        $event = new \Joomla\CMS\Event\GenericEvent('onContractorGetLines', [
+        $event = new \Joomla\Event\Event('onContractorGetLines', [
             'contractId' => $contractId,
             'lines'      => $lines
         ]);
