@@ -25,12 +25,12 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
         <div class="col-12">
             <h1 class="display-1" style="line-height: 40px;"><span class="fas fa-file-contract"></span>&nbsp;<?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TITLE'); ?><br />
                 <span class="display-6"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_SUBTITLE'); ?></span></h1>
-            <p class="text-muted">
+            <p class="text-muted"><span class="fas fa-file-contract"></span>
                 <?php 
                 echo Text::_('COM_CONTRACTOR_VERSION')." ".$this->escape($version); 
                 if (!empty($this->plugins)) {
                     foreach ($this->plugins as $plugin) {
-                        echo "<br />\nPlugin : ".$this->escape($plugin->name)." - ".$this->escape($plugin->version); 
+                        echo "<br />\n<span class=\"fas fa-puzzle-piece\"></span> Plugin : ".$this->escape($plugin->name)." - ".$this->escape($plugin->version); 
                     }
                 } ?>
             </p>
@@ -43,7 +43,7 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
             <div class="card bg-primary text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TOTAL_CONT'); ?></h5>
+                        <h3 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TOTAL_CONT'); ?></h3>
                         <span class="icon-folder-open fs-2 opacity-50" aria-hidden="true"></span>
                     </div>
                     <p class="card-text display-4 fw-bold mb-0">
@@ -57,7 +57,7 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
             <div class="card bg-warning text-dark h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_WARNING_CONT'); ?></h5>
+                        <h3 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_WARNING_CONT'); ?></h3>
                         <span class="icon-exclamation-triangle fs-2 opacity-50" aria-hidden="true"></span>
                     </div>
                     <p class="card-text display-4 fw-bold mb-0">
@@ -71,7 +71,7 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
             <div class="card bg-danger text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_EXPIRED_CONT'); ?></h5>
+                        <h3 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_EXPIRED_CONT'); ?></h3>
                         <span class="icon-exclamation-circle fs-2 opacity-50" aria-hidden="true"></span>
                     </div>
                     <p class="card-text display-4 fw-bold mb-0">
@@ -85,7 +85,7 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
             <div class="card bg-success text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TOTAL_CLIENTS'); ?></h5>
+                        <h3 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TOTAL_CLIENTS'); ?></h3>
                         <span class="icon-users fs-2 opacity-50" aria-hidden="true"></span>
                     </div>
                     <p class="card-text display-4 fw-bold mb-0">
@@ -99,7 +99,7 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
             <div class="card bg-info text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TOTAL_TAGS'); ?></h5>
+                        <h3 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_TOTAL_TAGS'); ?></h3>
                         <span class="icon-tag fs-2 opacity-50" aria-hidden="true"></span>
                     </div>
                     <p class="card-text display-4 fw-bold mb-0">
@@ -113,7 +113,7 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
             <div id="versionTile" class="card bg-secondary text-white h-100 shadow-sm border-0">
                 <div class="card-body">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_SYSTEM'); ?></h5>
+                        <h3 class="card-title mb-0"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_SYSTEM'); ?></h3>
                             <span class="fas fa-gear fs-2 opacity-50" aria-hidden="true"></span>
                     </div>
                     
@@ -145,7 +145,7 @@ $version = $this->config['version'] ?? '1.0.0 (Unknown)';
 
     <div class="row mb-4 mt-2">
         <div class="col-12">
-            <div class="card-header text-white bg-primary"><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_LATEST_LOGS'); ?></div>
+            <div class="card-header text-white bg-primary"  style="cursor: pointer;" onclick="window.location.href='<?php echo Route::_('index.php?option=com_contractor&view=logs'); ?>';"><span class="fas fa-book me-2"></span><?php echo Text::_('COM_CONTRACTOR_DASHBOARD_LATEST_LOGS'); ?></div>
             <div class="table-responsive bg-white shadow-sm p-0 rounded" style="max-height: 600px; overflow-y: auto;">
                 <table class="table table-striped table-hover mb-0">
                     <thead class="sticky-top">

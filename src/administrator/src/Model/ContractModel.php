@@ -172,17 +172,17 @@ class ContractModel extends AdminModel
             
         $db->setQuery($query);
 
+        $lines = $db->loadObjectList() ?: [];
+
         // --- HOOK : Adding virtual lines (ex:  Mailgun) ---
         \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
         $event = new \Joomla\Event\Event('onContractorGetLines', [
             'contractId' => $contractId,
             'lines'      => $lines
         ]);
+        
         $event = \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContractorGetLines', $event);
-        $lines = $event->getArgument('lines');
-        // ----------------------------------------------------
-
-        return $db->loadObjectList() ?: [];
+        return $event->getArgument('lines');
     }
 
     /**

@@ -95,10 +95,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     <?php echo HTMLHelper::_('searchtools.sort', 'COM_CONTRACTOR_CONTRACT_LASTMSG2', 'a.lastmsg', $listDirn, $listOrder); ?>
                 </th>
                 <th>
-                    Tags
-                </th>
-                <th width="1%" class="text-end">
-                    &nbsp;
+                    <?php echo Text::_("COM_CONTRACTOR_CONTRACT_TAG"); ?>
                 </th>
             </tr>
         </thead>
@@ -199,16 +196,6 @@ document.addEventListener('DOMContentLoaded', function() {
                         <?php else : ?>
                             n/a
                         <?php endif; ?>
-                    </td>
-                    <td>
-                        <div class="d-flex gap-3 justify-content-end align-items-center">
-                            <a href="<?php echo Route::_('index.php?option=com_contractor&task=contract.edit&id=' . (int) $item->id); ?>" class="contractor-tool-btn btn btn-primary" style="padding: 0.1em 1em;" title="Edit">
-                                <span class="icon-edit" aria-hidden="true"></span>
-                            </a>
-                            <a href="<?php echo Route::_('index.php?option=com_contractor&task=contract.email&id=' . (int) $item->id); ?>" class="contractor-tool-btn btn btn-primary" style="padding: 0.1em 1em;" title="Email">
-                                <span class="icon-mail" aria-hidden="true"></span>
-                            </a>
-                        </div>
                     </td>
                 </tr>
             <?php endforeach; ?>
