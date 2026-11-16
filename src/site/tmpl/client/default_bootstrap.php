@@ -102,7 +102,16 @@ if ($ctMsgText === 'COM_CONTRACTOR_CTMSGTXTDEF') {
                                 <ul class="list-group list-group-flush">
                                     <?php foreach ($contract->lines as $line): ?>
                                         <li class="list-group-item d-flex justify-content-between align-items-center rounded-0 border-light py-1">
-                                            <span class="text-secondary"><?php echo $this->escape($line->description); ?></span>
+                                            <span class="text-secondary">
+                                                <?php 
+                                                    $safeDesc = $this->escape($line->description);
+                                                    echo str_replace(
+                                                        ['&lt;small&gt;', '&lt;/small&gt;', '&lt;strong&gt;', '&lt;/strong&gt;', '&lt;em&gt;', '&lt;/em&gt;', '&lt;br&gt;', '&lt;br /&gt;'],
+                                                        ['<small>', '</small>', '<strong>', '</strong>', '<em>', '</em>', '<br>', '<br />'],
+                                                        $safeDesc
+                                                    ); 
+                                                ?>
+                                            </span>
                                             <span class="fw-bold text-dark"><?php echo number_format($line->price / 100, 2, ',', ' '); ?> €</span> 
                                         </li>
                                     <?php endforeach; ?>
@@ -143,7 +152,7 @@ if ($ctMsgText === 'COM_CONTRACTOR_CTMSGTXTDEF') {
                                 <?php foreach ($this->invoices as $invoice): ?>
                                     <li class="list-group-item d-flex rounded-0 border-light py-1 px-2">
                                         <span class="text-secondary pe-5"><?php echo $this->escape($invoice->invoicedate); ?></span>
-                                        <a class="text-dark text-decoration-none" href="<?php echo $this->escape($invoice->pdf_link); ?>" target="_blank"><?php echo $this->escape($invoice->reference); ?> 
+                                        <a class="text-dark text-decoration-none" href="<?php echo $this->escape($invoice->invdata); ?>" target="_blank"><?php echo $this->escape($invoice->reference); ?> 
                                         <span class="text-uppercase" style="font-size: 75%;">(<?php echo Text::_('COM_CONTRACTOR_CLIENT_DL'); ?>)</span></a>
                                     </li>
                                 <?php endforeach; ?>

@@ -45,17 +45,14 @@ class ContractmsgModel extends BaseDatabaseModel
         }
 
         // 2. Get Contract Lines
-        $linesQuery = $db->getQuery(true)
-            ->select(['description', 'price'])
-            ->from($db->quoteName('#__ctr_contract_line'))
-            ->where($db->quoteName('contract_id') . ' = ' . $contractId);
-        $db->setQuery($linesQuery);
-        $lines = $db->loadObjectList();
+        $mvcFactory = Factory::getApplication()->bootComponent('com_contractor')->getMVCFactory();
+        $contractModel = $mvcFactory->createModel('Contract', 'Administrator', ['ignore_request' => true]);
+        $lines = $contractModel->getLines($contractId);
 
         // 3. Get Configuration
         $config = ContractorHelper::getConfig();
 
-        // --- NOUVEAU : Fonction utilitaire pour corriger les images relatives ---
+        // Rectify relative URLs
         $rootUrl = rtrim(Uri::root(), '/');
         $fixImages = function($html) use ($rootUrl) {
             return preg_replace_callback(
@@ -80,11 +77,23 @@ class ContractmsgModel extends BaseDatabaseModel
 
         if (!empty($lines)) {
             foreach ($lines as $line) {
-                $totalCents += (int) $line->price;
-                $priceEuros = number_format($line->price / 100, 2, '.', '');
+                // Compatibility layer: Ensure price format handling is robust whether object (DB) or array (from plugin if badly formatted)
+                $price = is_object($line) ? $line->price : $line['price'];
+                $desc = is_object($line) ? $line->description : $line['description'];
+                
+                $totalCents += (int) $price;
+                $priceEuros = number_format($price / 100, 2, '.', '');
+                
+                // Sécuriser la description tout en restaurant les balises HTML basiques autorisées
+                $safeDesc = htmlspecialchars($desc, ENT_QUOTES, 'UTF-8');
+                $safeDesc = str_replace(
+                    ['&lt;small&gt;', '&lt;/small&gt;', '&lt;strong&gt;', '&lt;/strong&gt;', '&lt;em&gt;', '&lt;/em&gt;', '&lt;br&gt;', '&lt;br /&gt;'],
+                    ['<small>', '</small>', '<strong>', '</strong>', '<em>', '</em>', '<br>', '<br />'],
+                    $safeDesc
+                );
                 
                 $linesHtml .= "    <tr>\n";
-                $linesHtml .= "      <td style=\"padding: 8px; border-bottom: 1px solid #eee; text-wrap: wrap;vertical-align: top;\">" . htmlspecialchars($line->description) . "</td>\n";
+                $linesHtml .= "      <td style=\"padding: 8px; border-bottom: 1px solid #eee; text-wrap: wrap;vertical-align: top;\">" . $safeDesc . "</td>\n";
                 $linesHtml .= "      <td style=\"padding: 8px; border-bottom: 1px solid #eee; text-align: right;vertical-align: top;\">" . $priceEuros . " " . $currency . "</td>\n";
                 $linesHtml .= "    </tr>\n";
             }
@@ -106,7 +115,6 @@ class ContractmsgModel extends BaseDatabaseModel
             '{total_price}'        => $totalEuros,
             '{serviceslist}'       => $servicesListHtml,
             '{rem}'                => $data->rem ?? '',
-            // SUPPRESSION de <p> et nl2br() : la configuration contient déjà du HTML propre
             '{signature}'          => $fixImages($config['signature'] ?? '')
         ];
 
@@ -114,7 +122,6 @@ class ContractmsgModel extends BaseDatabaseModel
         $rawSource = $fixImages($data->mailtext ?? '');
         
         // NETTOYAGE ANTI-TINYMCE : 
-        // Retire les <p> orphelins autour des tags qui génèrent des éléments de type "bloc" (tableaux) ou qui ont déjà leurs propres <p>
         $rawSource = preg_replace('/<p>\s*({serviceslist})\s*<\/p>/i', '$1', $rawSource);
         $rawSource = preg_replace('/<p>\s*({signature})\s*<\/p>/i', '$1', $rawSource);
         

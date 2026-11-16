@@ -99,7 +99,16 @@ if ($ctMsgText === 'COM_CONTRACTOR_CTMSGTXTDEF') {
                             <ul class="uk-list uk-list-divider uk-margin-remove-top uk-margin-remove-bottom">
                                 <?php foreach ($contract->lines as $line): ?>
                                     <li class="uk-flex uk-flex-between uk-flex-middle custom-uikit-padding-lines">
-                                        <span class="uk-text-muted"><?php echo $this->escape($line->description); ?></span>
+                                        <span class="uk-text-muted">
+                                            <?php 
+                                                $safeDesc = $this->escape($line->description);
+                                                echo str_replace(
+                                                    ['&lt;small&gt;', '&lt;/small&gt;', '&lt;strong&gt;', '&lt;/strong&gt;', '&lt;em&gt;', '&lt;/em&gt;', '&lt;br&gt;', '&lt;br /&gt;'],
+                                                    ['<small>', '</small>', '<strong>', '</strong>', '<em>', '</em>', '<br>', '<br />'],
+                                                    $safeDesc
+                                                ); 
+                                            ?>
+                                        </span>
                                         <span class="uk-text-bold uk-text-emphasis"><?php echo number_format($line->price / 100, 2, ',', ' '); ?> €</span> 
                                     </li>
                                 <?php endforeach; ?>
@@ -123,7 +132,7 @@ if ($ctMsgText === 'COM_CONTRACTOR_CTMSGTXTDEF') {
                 </li>
             <?php endforeach; ?>
 
-            <li class="uk-card uk-card-default uk-card-small uk-margin-small-bottom uk-border-rounded-0">
+            <li class="uk-card uk-card-default uk-card-small uk-margin-small-bottom uk-border-rounded-0 uk-margin-medium-top">
                 <a class="uk-accordion-title custom-uikit-invoice-bg custom-uikit-padding uk-flex uk-flex-middle" href="#">
                     <span class="fas fa-chevron-right custom-uikit-chevron uk-margin-small-right"></span>
                     <span class="fas fa-file-pdf uk-margin-small-right"></span>
@@ -134,11 +143,11 @@ if ($ctMsgText === 'COM_CONTRACTOR_CTMSGTXTDEF') {
                     <div class="custom-uikit-padding-lines">
                         <?php if ($hasInvoices): ?>
 
-                            <ul class="uk-list uk-list-divider">
+                            <ul class="uk-list uk-list-divider uk-margin-xsmall-bottom">
                                 <?php foreach ($this->invoices as $invoice): ?>
                                     <li class="uk-flex">
                                         <span class="uk-text-muted uk-margin-large-right"><?php echo $this->escape($invoice->invoicedate); ?></span>
-                                        <a class="uk-link-reset" href="<?php echo $this->escape($invoice->pdf_link); ?>" target="_blank"><?php echo $this->escape($invoice->reference); ?> 
+                                        <a class="uk-link-reset" href="<?php echo $this->escape($invoice->invdata); ?>" target="_blank"><?php echo $this->escape($invoice->reference); ?> 
                                         <span class="uk-text-uppercase" style="font-size: 75%;">(<?php echo Text::_('COM_CONTRACTOR_CLIENT_DL'); ?>)</span></a>
                                     </li>
                                 <?php endforeach; ?>

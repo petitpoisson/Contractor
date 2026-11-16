@@ -136,20 +136,20 @@ $config   = ContractorHelper::getConfig();
                     </tfoot>
                 </table>
                 
-            <?php 
-            endif; 
+            <?php endif; ?>
 
-            // --- Hook : plugins additional settings ---
-            \Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
-            $eventSettings = new \Joomla\Event\Event('onContractorRenderServiceSettings', [
-                'contractId' => (int) $this->item->id,
-                'html'       => []
-            ]);
-            $eventSettings = \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContractorRenderServiceSettings', $eventSettings);
-            echo implode("\n", $eventSettings->getArgument('html'));
-            ?>
         </div>        
     </div>
+<?php
+// --- Hook : plugins additional settings ---
+\Joomla\CMS\Plugin\PluginHelper::importPlugin('contractor');
+$eventSettings = new \Joomla\Event\Event('onContractorRenderServiceSettings', [
+    'contractId' => (int) $this->item->id,
+    'html'       => []
+]);
+$eventSettings = \Joomla\CMS\Factory::getApplication()->getDispatcher()->dispatch('onContractorRenderServiceSettings', $eventSettings);
+echo implode("\n", $eventSettings->getArgument('html'));
+?>
 
     <input type="hidden" name="task" value="">
     <?php echo HTMLHelper::_('form.token'); ?>

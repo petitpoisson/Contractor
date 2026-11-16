@@ -15,6 +15,8 @@ namespace XavierSpirlet\Component\Contractor\Site\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\BaseDatabaseModel;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Event\Event;
 use Joomla\CMS\Factory;
 use Joomla\Database\DatabaseInterface;
 
@@ -92,6 +94,15 @@ class ClientModel extends BaseDatabaseModel
                 }
             }
         }
+
+        // --- HOOK : onContractorClientGetContracts ---
+        PluginHelper::importPlugin('contractor');
+        $event = new Event('onContractorClientGetContracts', [
+            'contracts' => $contracts
+        ]);
+        $event = Factory::getApplication()->getDispatcher()->dispatch('onContractorClientGetContracts', $event);
+        $contracts = $event->getArgument('contracts');
+        // ---------------------------------------------
 
         return $contracts;
     }

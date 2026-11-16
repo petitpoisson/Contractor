@@ -16,6 +16,9 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Controller;
 use Joomla\CMS\MVC\Controller\FormController;
 use Joomla\CMS\Response\JsonResponse;
 use Joomla\CMS\Language\Text;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Event\Event;
+use Joomla\CMS\Factory;
 use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
 
 /**
@@ -82,6 +85,16 @@ class ContractController extends FormController
             if ($model->delete($pkArray)) {
                 $this->app->enqueueMessage(Text::_('COM_CONTRACTOR_ITEMS_DELETED'));
                 ContractorHelper::writeLog($clientId ?: null, 1, "Joomla user (id {$userId}) deleted contract {$contract->name} (id {$contract->id})");
+
+                // --- HOOK : onContractorAfterDelete ---
+                PluginHelper::importPlugin('contractor');
+                $eventDel = new Event('onContractorAfterDelete', [
+                    'context' => 'com_contractor.contract',
+                    'id'      => $contract->id
+                ]);
+                Factory::getApplication()->getDispatcher()->dispatch('onContractorAfterDelete', $eventDel);
+                // --------------------------------------
+
             } else {
                 $this->app->enqueueMessage($model->getError(), 'error');
                 ContractorHelper::writeLog($clientId ?: null, 2, "Joomla user (id {$userId}) FAILED to delete contract {$contract->name} (id {$contract->id})");

@@ -14,6 +14,8 @@ namespace XavierSpirlet\Component\Contractor\Administrator\Model;
 \defined('_JEXEC') or die;
 
 use Joomla\CMS\MVC\Model\AdminModel;
+use Joomla\CMS\Plugin\PluginHelper;
+use Joomla\Event\Event;
 use Joomla\CMS\Factory;
 use XavierSpirlet\Component\Contractor\Administrator\Helper\ContractorHelper;
 
@@ -79,6 +81,17 @@ class ContractModel extends AdminModel
                 }
             }
         }
+
+        // --- HOOK : onContractorAfterSave ---
+        if ($result) {
+            PluginHelper::importPlugin('contractor');
+            $eventSave = new Event('onContractorAfterSave', [
+                'context' => 'com_contractor.contract',
+                'item'    => $this->getItem($contractId)
+            ]);
+            Factory::getApplication()->getDispatcher()->dispatch('onContractorAfterSave', $eventSave);
+        }
+        // ------------------------------------
 
         // Return the boolean result of the single save operation
         return $result;
