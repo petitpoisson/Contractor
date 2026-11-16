@@ -150,7 +150,7 @@ if ($ctMsgText === 'COM_CONTRACTOR_CTMSGTXTDEF') {
                                     <?php foreach ($invoices as $invoice): ?>
                                         <li class="list-group-item d-flex rounded-0 border-light py-1 px-2">
                                             <span class="text-secondary pe-5"><?php echo htmlspecialchars($invoice->invoicedate, ENT_QUOTES, 'UTF-8'); ?></span>
-                                            <a class="text-dark text-decoration-none" href="<?php echo htmlspecialchars($invoice->pdf_link, ENT_QUOTES, 'UTF-8'); ?>" target="_blank"><?php echo htmlspecialchars($invoice->reference, ENT_QUOTES, 'UTF-8'); ?> 
+                                            <a class="text-dark text-decoration-none" href="<?php echo htmlspecialchars($invoice->invdata, ENT_QUOTES, 'UTF-8'); ?>" target="_blank"><?php echo htmlspecialchars($invoice->reference, ENT_QUOTES, 'UTF-8'); ?> 
                                             <span class="text-uppercase" style="font-size: 75%;">(<?php echo Text::_('COM_CONTRACTOR_CLIENT_DL'); ?>)</span></a>
                                         </li>
                                     <?php endforeach; ?>
